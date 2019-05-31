@@ -65,11 +65,11 @@ func debugLog(opt string, data interface{}, startTime time.Time, err error) {
 	if conf.DBDebug {
 		typeName := reflect.TypeOf(data).Name()
 		if err != nil {
-			log.Debug("[%v] %v err %v", typeName, err)
+			log.Debugf("[%v] %v err: %v", opt, typeName, err)
 		}
 		duration := time.Now().Sub(startTime)
 		if duration.Seconds() >= conf.DBTimeoutThreshold {
-			log.Debug("[%v] %v too long %v", opt, typeName, duration.Seconds())
+			log.Debugf("[%v] %v too long %v", opt, typeName, duration.Seconds())
 		}
 	}
 }
