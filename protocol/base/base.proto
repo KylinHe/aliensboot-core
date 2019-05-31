@@ -1,0 +1,32 @@
+syntax = "proto3";
+package base;
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+message Any {
+    //Agent gate.Agent
+
+    uint32 id = 1[(gogoproto.customtype) = "uint16",(gogoproto.nullable) = false]; //消息id
+
+    int64 auth_id = 2; //验权id 服务器内部透传,玩家在登录成功后发送的验权id
+
+    //string type_url = 3; //json request
+
+    string gate_id = 3; //dispatch cluster unique gate service node id
+
+    // Must be a valid serialized protocol buffer of the above specified type.
+    bytes value = 4;
+}
+
+//rpc 服务间转发
+service RPCService {
+    //rpc request (google.protobuf.Any) returns (google.protobuf.Any) {}
+    rpc request (Any) returns (stream Any) {};
+
+    rpc receive (stream Any) returns (Any) {};
+
+//    rpc request1 (stream Any) returns (Any) {};
+//
+//    rpc request2 (Any) returns (stream Any) {};
+//
+//    rpc request3 (stream Any) returns (stream Any) {};
+}

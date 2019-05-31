@@ -1,0 +1,42 @@
+name: aliens/gok
+
+path.proto: protocol.proto
+path.template: templates
+
+modules:
+  - name: passport
+    outputs:
+    - template: passport_common.template
+      output: ../module/passport/service/service.go
+      overwrite: true
+    - template: passport_common_handle.template
+      output: ../module/passport/service
+      prefix: handle_${}.go
+      overwrite: false
+    - template: common_rpc.template
+      output: ../dispatch/rpc/passport.go
+      overwrite: true
+  - name: gate
+    outputs:
+    - template: gate_common.template
+      output: ../module/gate/service/service.go
+      overwrite: true
+    - template: gate_common_handle.template
+      output: ../module/gate/service
+      prefix: handle_${}.go
+      overwrite: false
+    - template: gate_common_rpc.template
+      output: ../dispatch/rpc/gate.go
+      overwrite: true
+  - name: game
+    outputs:
+    - template: common.template
+      output: ../module/game/service/service.go
+      overwrite: true
+    - template: common_handle.template
+      output: ../module/game/service
+      prefix: handle_${}.go
+      overwrite: false
+    - template: common_rpc.template
+      output: ../dispatch/rpc/game.go
+      overwrite: true

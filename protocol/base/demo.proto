@@ -1,0 +1,18 @@
+syntax = "proto3";
+package base;
+//import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+//import "google/protobuf/timestamp.proto";
+
+
+//message add_log {
+//    order_record orderRecord = 1;
+//}
+//
+//message order_record {
+//    string id = 1 [(gogoproto.moretags) = "bson:\"_id\""];
+//    int32 userID = 2 [(gogoproto.moretags) = "bson:\"userid\""];
+//    int32 productID = 3 [(gogoproto.moretags) = "bson:\"productid\""];
+//    double amount = 4 [(gogoproto.moretags) = "bson:\"amount\""];
+////  double time = 5 [(gogoproto.moretags) = "bson:\"time\""];
+//    google.protobuf.Timestamp time = 5 [(gogoproto.stdtime) = true,(gogoproto.nullable) = false,(gogoproto.moretags) = "bson:\"time\""];
+//}
