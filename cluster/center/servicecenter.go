@@ -20,11 +20,11 @@ import (
 
 var ClusterCenter ServiceCenter = &ETCDServiceCenter{} //服务调度中心
 
-const NODE_SPLIT string = "/"
+const NodeSplit string = "/"
 
-const SERVICE_NODE_NAME string = "service"
+const ServiceNodeName string = "service"
 
-const CONFIG_NODE_NAME string = "config"
+const ConfigNodeName string = "config"
 
 func PublicService(config config.ServiceConfig, handler interface{}) service.IService {
 	var service service.IService = nil

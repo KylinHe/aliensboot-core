@@ -29,12 +29,12 @@ type ETCDServiceCenter struct {
 	client             *clientv3.Client
 
 	node string //当前节点
-
 	configRoot  string //配置根节点
 	serviceRoot string //服务根节点
+
 	ttl         int64
 	ttlCheck    *sync.Map //map[string]string
-	ticker      *time.Ticker
+	//ticker      *time.Ticker
 }
 
 func (this *ETCDServiceCenter) ConnectCluster(config config.ClusterConfig) {
@@ -45,7 +45,7 @@ func (this *ETCDServiceCenter) ConnectCluster(config config.ClusterConfig) {
 		config.Timeout = 5
 	}
 	if config.TTL == 0 {
-		config.TTL = 10
+		config.TTL = 30
 	}
 
 	etcdConfig := clientv3.Config{
@@ -58,15 +58,17 @@ func (this *ETCDServiceCenter) ConnectCluster(config config.ClusterConfig) {
 	}
 	this.client = client
 	this.ttlCheck = &sync.Map{} //make(map[string]string)
-	this.serviceRoot = NODE_SPLIT + "root" + NODE_SPLIT + config.Name + NODE_SPLIT + SERVICE_NODE_NAME
-	this.configRoot = NODE_SPLIT + "root" + NODE_SPLIT + config.Name + NODE_SPLIT + CONFIG_NODE_NAME
+	this.serviceRoot = NodeSplit + "root" + NodeSplit + config.Name + NodeSplit + ServiceNodeName
+	this.configRoot = NodeSplit + "root" + NodeSplit + config.Name + NodeSplit + ConfigNodeName
 
 	this.node = config.ID
 	this.ttl = config.TTL
 	//this.listeners = make(map[string]struct{})
 
 	this.Container = service.NewContainer()
-	go this.openTTLCheck()
+
+	//开启ttl
+	//go this.openTTLCheck()
 }
 
 func (this *ETCDServiceCenter) GetNodeID() string {
@@ -79,19 +81,26 @@ func (this *ETCDServiceCenter) IsConnect() bool {
 
 func (this *ETCDServiceCenter) Close() {
 	if this.client != nil {
-		this.client.Close()
+		_ = this.client.Close()
 		this.client = nil
 	}
 }
 
 //释放服务
 func (this *ETCDServiceCenter) ReleaseService(service service.IService) {
-	servicePath := this.serviceRoot + NODE_SPLIT + service.GetName() + NODE_SPLIT + service.GetID()
-	this.client.Delete(newTimeoutContext(), servicePath)
+	servicePath := this.serviceRoot + NodeSplit + service.GetName() + NodeSplit + service.GetID()
+	_, _ = this.client.Delete(newTimeoutContext(), servicePath)
 	//this.RLock()
 	//defer this.RUnlock()
 	//delete(this.ttlCheck, servicePath)
-	this.ttlCheck.Delete(servicePath)
+
+	ticker, ok := this.ttlCheck.Load(servicePath)
+	if ok {
+		ticker.(*time.Ticker).Stop()
+		this.ttlCheck.Delete(servicePath)
+	}
+
+
 	this.Container.RemoveService(service.GetName(), service.GetID())
 }
 
@@ -105,8 +114,8 @@ func (this *ETCDServiceCenter) PublicService(service service.IService, config co
 		return false
 	}
 
-	serviceRootPath := this.serviceRoot + NODE_SPLIT + service.GetName()
-	servicePath := serviceRootPath + NODE_SPLIT + service.GetID()
+	serviceRootPath := this.serviceRoot + NodeSplit + service.GetName()
+	servicePath := serviceRootPath + NodeSplit + service.GetID()
 
 	rsp, err := this.client.Get(newTimeoutContext(), serviceRootPath, clientv3.WithPrefix())
 	if err != nil {
@@ -118,6 +127,7 @@ func (this *ETCDServiceCenter) PublicService(service service.IService, config co
 		log.Errorf("unique service %v already exist.", service.GetName())
 		return false
 	}
+
 	for _, v := range rsp.Kvs {
 		path := string(v.Key)
 		if servicePath == path {
@@ -144,25 +154,19 @@ func (this *ETCDServiceCenter) PublicService(service service.IService, config co
 		return false
 	}
 
-
 	//允许本地调用 需要注册在服务容器中
 	if config.Local && !this.UpdateService(service, false) {
 		return false
 	}
 
-
-	serviceData := string(data)
 	resp, _ := this.client.Grant(context.TODO(), this.ttl)
-	_, err1 := this.client.Put(newTimeoutContext(), servicePath, string(data), clientv3.WithLease(resp.ID))
+	serviceData := string(data)
+	_, err1 := this.client.Put(newTimeoutContext(), servicePath, serviceData, clientv3.WithLease(resp.ID))
 	if err1 != nil {
 		log.Errorf("create service error : %v", err1)
 		return false
 	}
-
-	this.ttlCheck.Store(servicePath, serviceData)
-	//this.Lock()
-	//this.ttlCheck[servicePath] = serviceData
-	//this.Unlock()
+	this.openTTLCheck(servicePath, serviceData)
 	log.Infof("public %v success", servicePath)
 	return true
 }
@@ -172,22 +176,36 @@ func newTimeoutContext() context.Context {
 	return ctx
 }
 
-func (this *ETCDServiceCenter) openTTLCheck() {
-	this.ticker = time.NewTicker(time.Second * time.Duration(this.ttl/2))
-	for {
-		select {
-		case <-this.ticker.C:
-			this.ttlCheck.Range(this.check)
+func (this *ETCDServiceCenter) openTTLCheck(path string, data string) {
+	ticker := time.NewTicker(time.Second * time.Duration(this.ttl/2))
+	this.ttlCheck.Store(path, ticker)
+	go func(){
+		for {
+			select {
+			case <-ticker.C:
+				//this.ttlCheck.Range(this.check)
+				resp, _ := this.client.Grant(context.TODO(), this.ttl)
+				//log.Debugf("ttl updata %v - %v", path, data)
+				_, err := this.client.Put(newTimeoutContext(), path, data, clientv3.WithLease(resp.ID))
+				if err != nil {
+					log.Debugf("ttl update %v", err)
+				}
+
+			}
 		}
-	}
+	}()
 }
 
-func (this *ETCDServiceCenter) check(path, data interface{}) bool {
-	resp, _ := this.client.Grant(context.TODO(), this.ttl)
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-	this.client.Put(ctx, path.(string), data.(string), clientv3.WithLease(resp.ID))
-	return true
-}
+//func (this *ETCDServiceCenter) check(path, data interface{}) bool {
+//	resp, _ := this.client.Grant(context.TODO(), this.ttl)
+//	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+//	//log.Debugf("ttl updata %v - %v", path, data)
+//	_, err := this.client.Put(ctx, path.(string), data.(string), clientv3.WithLease(resp.ID))
+//	if err != nil {
+//		log.Debugf("ttl update %v", err)
+//	}
+//	return true
+//}
 
 func (this *ETCDServiceCenter) SubscribeServices(serviceNames ...string) {
 	for _, serviceName := range serviceNames {
@@ -195,12 +213,16 @@ func (this *ETCDServiceCenter) SubscribeServices(serviceNames ...string) {
 	}
 }
 
-func (this *ETCDServiceCenter) SubscribeService(healthyOnly bool, serviceName string) {
-	this.SubscribeConfig("lbs"+NODE_SPLIT+serviceName, func(data []byte) {
-		this.Container.SetLbs(serviceName, string(data))
-	})
+func (this *ETCDServiceCenter) SetLbs(serviceName string, lbs string) {
+	this.Container.SetLbs(serviceName, lbs)
+}
 
-	serviceRootPath := this.serviceRoot + NODE_SPLIT + serviceName + NODE_SPLIT
+func (this *ETCDServiceCenter) SubscribeService(healthyOnly bool, serviceName string) {
+	//this.SubscribeConfig("lbs"+NODE_SPLIT+serviceName, func(data []byte) {
+	//	this.Container.SetLbs(serviceName, string(data))
+	//})
+
+	serviceRootPath := this.serviceRoot + NodeSplit + serviceName + NodeSplit
 	prefixLen := len(serviceRootPath)
 
 	rsp, err := this.client.Get(newTimeoutContext(), serviceRootPath, clientv3.WithPrefix())
@@ -248,7 +270,7 @@ func (this *ETCDServiceCenter) handleService(eventType mvccpb.Event_EventType, v
 }
 
 func (this *ETCDServiceCenter) SubscribeConfig(configName string, configHandler ConfigListener) {
-	configPath := this.configRoot + NODE_SPLIT + configName
+	configPath := this.configRoot + NodeSplit + configName
 	rsp, err := this.client.Get(newTimeoutContext(), configPath)
 	if err != nil {
 		log.Errorf("subscribe config %v error: %v", configPath, err)
@@ -278,7 +300,7 @@ func (this *ETCDServiceCenter) PublicConfig(configType string, configContent []b
 		log.Info("config type con not be empty")
 		return false
 	}
-	configPath := this.configRoot + NODE_SPLIT + configType
+	configPath := this.configRoot + NodeSplit + configType
 
 	_, err := this.client.Put(newTimeoutContext(), configPath, string(configContent))
 	if err != nil {

@@ -150,12 +150,12 @@ func (this *Container) GetAllService(serviceType string) []IService {
 	return serviceCategory.getAllService()
 }
 
-func (this *Container) GetServiceInfo(serviceType string) []string {
-	this.RLock()
-	defer this.RUnlock()
-	serviceCategory := this.root[serviceType]
-	if serviceCategory == nil {
-		return nil
-	}
-	return serviceCategory.getNodes()
-}
+//func (this *Container) GetServiceInfo(serviceType string) []string {
+//	this.RLock()
+//	defer this.RUnlock()
+//	serviceCategory := this.root[serviceType]
+//	if serviceCategory == nil {
+//		return nil
+//	}
+//	return serviceCategory.getNodes()
+//}

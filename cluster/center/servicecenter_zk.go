@@ -63,11 +63,11 @@ func (this *ZKServiceCenter) ConnectCluster(config config.ClusterConfig) {
 		panic(err)
 	}
 	this.Container = service.NewContainer()
-	this.serviceRoot = NODE_SPLIT + this.zkName + NODE_SPLIT + SERVICE_NODE_NAME
-	this.configRoot = NODE_SPLIT + this.zkName + NODE_SPLIT + CONFIG_NODE_NAME
+	this.serviceRoot = NodeSplit + this.zkName + NodeSplit + ServiceNodeName
+	this.configRoot = NodeSplit + this.zkName + NodeSplit + ConfigNodeName
 
 	this.zkCon = c
-	this.confirmNode(NODE_SPLIT + this.zkName)
+	this.confirmNode(NodeSplit + this.zkName)
 	this.confirmNode(this.serviceRoot)
 }
 
@@ -101,10 +101,10 @@ func (this *ZKServiceCenter) ReleaseService(service service.IService) {
 }
 
 func (this *ZKServiceCenter) SubscribeService(serviceName string) {
-	this.SubscribeConfig("lbs"+NODE_SPLIT+serviceName, func(data []byte) {
+	this.SubscribeConfig("lbs"+NodeSplit+serviceName, func(data []byte) {
 		this.Container.SetLbs(serviceName, string(data))
 	})
-	path := this.serviceRoot + NODE_SPLIT + serviceName
+	path := this.serviceRoot + NodeSplit + serviceName
 	//desc := this.confirmContentNode(path)
 	serviceIDs, _, ch, err := this.zkCon.ChildrenW(path)
 	if err != nil {
@@ -113,7 +113,7 @@ func (this *ZKServiceCenter) SubscribeService(serviceName string) {
 	}
 	services := []service.IService{}
 	for _, serviceID := range serviceIDs {
-		servicePath := path + NODE_SPLIT + serviceID
+		servicePath := path + NodeSplit + serviceID
 		data, _, err := this.zkCon.Get(servicePath)
 		if err != nil {
 			log.Errorf("get service %v data error: %v", servicePath, err)
@@ -180,7 +180,7 @@ func (this *ZKServiceCenter) PublicService(service service.IService, config conf
 	}
 	serviceName := service.GetName()
 	serviceId := service.GetID()
-	servicePath := this.serviceRoot + NODE_SPLIT + serviceName
+	servicePath := this.serviceRoot + NodeSplit + serviceName
 	if config.Unique {
 		//TODO 可能有事务上的问题 需要优化
 		child, _, _ := this.zkCon.Children(servicePath)
@@ -191,7 +191,7 @@ func (this *ZKServiceCenter) PublicService(service service.IService, config conf
 	}
 
 	this.confirmNode(servicePath)
-	id, err := this.zkCon.Create(servicePath+NODE_SPLIT+serviceId, data,
+	id, err := this.zkCon.Create(servicePath+NodeSplit+serviceId, data,
 		zk.FlagEphemeral, zk.WorldACL(zk.PermAll))
 	if err != nil {
 		log.Errorf("create service error : %v", err)
@@ -210,7 +210,7 @@ func (this *ZKServiceCenter) PublicConfig(configType string, configContent []byt
 		log.Info("config type con not be empty")
 		return false
 	}
-	configPath := this.configRoot + NODE_SPLIT + configType
+	configPath := this.configRoot + NodeSplit + configType
 	this.confirmNode(configPath)
 	_, err := this.zkCon.Set(configPath, configContent, -1)
 	if err != nil {
@@ -224,7 +224,7 @@ func (this *ZKServiceCenter) PublicConfig(configType string, configContent []byt
 //订阅服务  能实时更新服务信息
 func (this *ZKServiceCenter) SubscribeConfig(configName string, configHandler ConfigListener) {
 	this.assert()
-	path := this.configRoot + NODE_SPLIT + configName
+	path := this.configRoot + NodeSplit + configName
 	this.confirmNode(path)
 	content, _, ch, err := this.zkCon.GetW(path)
 	if err != nil {

@@ -28,7 +28,7 @@ func NewServiceCategory(category string, lbsStr string) *serviceCategory {
 
 type serviceCategory struct {
 	category string
-	lbs      lbs.LBStrategy      //负载均衡策略
+	lbs      lbs.Strategy        //负载均衡策略
 	services map[string]IService //服务节点名,和服务句柄
 	nodes    []string
 
@@ -174,10 +174,10 @@ func (this *serviceCategory) getAllService() []IService {
 	return results
 }
 
-func (this *serviceCategory) getMaster() IService {
-	//TODO 后续要加一套master-salve机制
-	if len(this.nodes) == 0 {
-		return nil
-	}
-	return this.services[this.nodes[0]]
-}
+//func (this *serviceCategory) getMaster() IService {
+//	//TODO 后续要加一套master-salve机制
+//	if len(this.nodes) == 0 {
+//		return nil
+//	}
+//	return this.services[this.nodes[0]]
+//}

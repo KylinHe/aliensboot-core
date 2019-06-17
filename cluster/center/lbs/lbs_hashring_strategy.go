@@ -21,7 +21,7 @@ import (
 
 const (
 	//DefaultVirualSpots default virual spots
-	DefaultVirualSpots = 400
+	DefaultVirtualSpots = 400
 )
 
 type node struct {
@@ -38,21 +38,22 @@ func (p nodesArray) Sort()              { sort.Sort(p) }
 
 //HashRing store nodes and weigths
 type HashRing struct {
-	virualSpots int
-	nodes       nodesArray
-	weights     map[string]int
+	virtualSpots int
+	nodes        nodesArray
+	weights      map[string]int
+	//cache        map[string]string //hash缓存、节点未变化的过程直接查找节点即可
 	//mu          sync.RWMutex
 }
 
 //NewHashRing create a hash ring with virual spots
 func NewHashRing(spots int) *HashRing {
 	if spots == 0 {
-		spots = DefaultVirualSpots
+		spots = DefaultVirtualSpots
 	}
 
 	h := &HashRing{
-		virualSpots: spots,
-		weights:     make(map[string]int),
+		virtualSpots: spots,
+		weights:      make(map[string]int),
 	}
 	return h
 }
@@ -84,12 +85,12 @@ func (h *HashRing) RemoveNode(nodeKey string) {
 }
 
 //UpdateNode update node with weight
-func (h *HashRing) UpdateNode(nodeKey string, weight int) {
-	//h.mu.Lock()
-	//defer h.mu.Unlock()
-	h.weights[nodeKey] = weight
-	h.generate()
-}
+//func (h *HashRing) UpdateNode(nodeKey string, weight int) {
+//	//h.mu.Lock()
+//	//defer h.mu.Unlock()
+//	h.weights[nodeKey] = weight
+//	h.generate()
+//}
 
 func (h *HashRing) generate() {
 	var totalW int
@@ -97,7 +98,7 @@ func (h *HashRing) generate() {
 		totalW += w
 	}
 
-	totalVirtualSpots := h.virualSpots * len(h.weights)
+	totalVirtualSpots := h.virtualSpots * len(h.weights)
 	h.nodes = nodesArray{}
 
 	for nodeKey, w := range h.weights {

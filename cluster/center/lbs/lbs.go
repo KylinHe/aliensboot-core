@@ -12,21 +12,21 @@
 package lbs
 
 const (
-	LbsStrategyPolling  string = "polling"  //轮询
-	LbsStrategyHashring string = "hashring" //一致性hash
+	StrategyPolling  string = "polling"  //轮询
+	StrategyHashring string = "hashring" //一致性hash
 )
 
-func GetLBS(lbs string) LBStrategy {
-	if lbs == LbsStrategyPolling {
+func GetLBS(lbs string) Strategy {
+	if lbs == StrategyPolling {
 		return NewPollingLBS()
-	} else if lbs == LbsStrategyHashring {
+	} else if lbs == StrategyHashring {
 		return NewHashRing(400)
 	} else {
 		return NewPollingLBS()
 	}
 }
 
-type LBStrategy interface {
+type Strategy interface {
 
 	//Init(nodes []string) //更新所有的负载节点信息
 

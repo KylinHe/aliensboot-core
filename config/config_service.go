@@ -16,6 +16,6 @@ type ServiceConfig struct {
 	Port     int    //服务端端口
 	Unique   bool   //是否全局唯一
 	Protocol string //提供服务的协议 GRPC HTTP WBSOCKET
-	Lbs      string //负载均衡策略
+	//Lbs      string //负载均衡策略
 	Local    bool   //是否支持本地调用 调用方和服务方在一个进程。优化作用
 }
