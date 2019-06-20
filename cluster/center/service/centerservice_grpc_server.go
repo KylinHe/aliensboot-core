@@ -58,8 +58,8 @@ func (this *rpcServer) start(name string, port int) bool {
 		return false
 	}
 	go func() {
-		server.Serve(lis)
-		log.Infof("rpc service %v stop", name)
+		_ = server.Serve(lis)
+		//log.Infof("rpc service %v stop", name)
 	}()
 	this.server = server
 	return true
@@ -77,7 +77,7 @@ func (this *rpcServer) request(args []interface{}) {
 	response := this.handler(request)
 	if response != nil {
 		response.Id = request.Id
-		server.Send(response)
+		_ = server.Send(response)
 	}
 }
 

@@ -139,7 +139,7 @@ func (this *GRPCService) Request(request *base.Any) (*base.Any, error) {
 		return nil, errors.New("service is not initial")
 	}
 
-	//加入超时机制，防止卡死
+	//加入超时机制
 	ctx, _ := context.WithTimeout(context.Background(), requestTimeout)
 	client, err := this.requestClient.Request(ctx, request)
 	if err != nil {

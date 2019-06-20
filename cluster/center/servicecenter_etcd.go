@@ -89,19 +89,19 @@ func (this *ETCDServiceCenter) Close() {
 //释放服务
 func (this *ETCDServiceCenter) ReleaseService(service service.IService) {
 	servicePath := this.serviceRoot + NodeSplit + service.GetName() + NodeSplit + service.GetID()
-	_, _ = this.client.Delete(newTimeoutContext(), servicePath)
-	//this.RLock()
-	//defer this.RUnlock()
-	//delete(this.ttlCheck, servicePath)
-
 	ticker, ok := this.ttlCheck.Load(servicePath)
 	if ok {
 		ticker.(*time.Ticker).Stop()
 		this.ttlCheck.Delete(servicePath)
 	}
-
-
 	this.Container.RemoveService(service.GetName(), service.GetID())
+
+	_, err := this.client.Delete(newTimeoutContext(), servicePath)
+	if err != nil {
+		log.Errorf("release service %v err : %v", servicePath, err)
+	} else {
+		log.Infof("release service %v success", servicePath)
+	}
 }
 
 //func (this *ETCDServiceCenter) AddServiceListener(listener service.Listener) {
@@ -273,7 +273,7 @@ func (this *ETCDServiceCenter) SubscribeConfig(configName string, configHandler 
 	configPath := this.configRoot + NodeSplit + configName
 	rsp, err := this.client.Get(newTimeoutContext(), configPath)
 	if err != nil {
-		log.Errorf("subscribe config %v error: %v", configPath, err)
+		log.Fatalf("subscribe config %v error: %v", configPath, err)
 		return
 	}
 	for _, v := range rsp.Kvs {
@@ -304,9 +304,32 @@ func (this *ETCDServiceCenter) PublicConfig(configType string, configContent []b
 
 	_, err := this.client.Put(newTimeoutContext(), configPath, string(configContent))
 	if err != nil {
-		log.Infof("public config %v  err : %v", configType, err)
+		log.Errorf("public config %v  err : %v", configType, err)
 		return false
 	}
 	log.Infof("public config %v success", configType)
 	return true
+}
+
+//上传数据
+func (this *ETCDServiceCenter) UploadData(path string, configContent []byte) bool {
+	_, err := this.client.Put(newTimeoutContext(), path, string(configContent))
+	if err != nil {
+		log.Errorf("upload data %v failed err : %v", path, err)
+		return false
+	}
+	log.Infof("upload data %v success", path)
+	return true
+}
+
+func (this *ETCDServiceCenter) DownloadData(path string) []byte {
+	rsp, err := this.client.Get(newTimeoutContext(), path)
+	if err != nil {
+		log.Errorf("download data %v error: %v", path, err)
+		return nil
+	}
+	for _, v := range rsp.Kvs {
+		return v.Value
+	}
+	return nil
 }
