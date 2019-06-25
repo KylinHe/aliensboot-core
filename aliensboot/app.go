@@ -86,7 +86,7 @@ func Run(mods ...module.Module) {
 		log.Debug(err)
 	}
 
-	log.Infof("AliensBoot %v starting up", config.Version)
+	log.Infof("AliensBoot %v starting up...", config.Version)
 
 	//module.Register(database.Module)
 

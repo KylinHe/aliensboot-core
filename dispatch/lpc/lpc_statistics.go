@@ -26,3 +26,6 @@ func (handler *statisticsHandler) AddServiceStatistic(service string, no int32, 
 func (handler *statisticsHandler) AddOnlineStatistic(userCount int, visitorCount int) {
 	statistics.ChanRPC.Go(constant.INTERNAL_STATISTICS_ONLINE, userCount, visitorCount)
 }
+
+
+
