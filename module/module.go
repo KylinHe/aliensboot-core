@@ -3,7 +3,6 @@ package module
 import (
 	"github.com/KylinHe/aliensboot-core/config"
 	"github.com/KylinHe/aliensboot-core/exception"
-	"github.com/KylinHe/aliensboot-core/log"
 	"sync"
 )
 
@@ -37,9 +36,9 @@ func Init() {
 	}
 
 	for i := 0; i < len(mods); i++ {
-		log.Infof("begin init module [%v]", mods[i].mi.GetName())
+		//log.Infof("begin init module [%v]", mods[i].mi.GetName())
 		mods[i].mi.OnInit()
-		log.Infof("end   init module [%v]", mods[i].mi.GetName())
+		//log.Infof("end   init module [%v]", mods[i].mi.GetName())
 	}
 
 	for i := 0; i < len(mods); i++ {

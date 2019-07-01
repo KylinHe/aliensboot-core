@@ -148,7 +148,7 @@ func (this *serviceCategory) removeService(serviceID string) {
 
 func (this *serviceCategory) handleRemoveNode(serviceID string) {
 	this.lbs.RemoveNode(serviceID)
-	log.Debugf("[lbs] remove node %v-%v", this.category, serviceID)
+	//log.Debugf("[lbs] remove node %v-%v", this.category, serviceID)
 	//for _, listener := range this.listeners {
 	//	listener.RemoveNode(serviceID)
 	//}
@@ -156,7 +156,7 @@ func (this *serviceCategory) handleRemoveNode(serviceID string) {
 
 func (this *serviceCategory) handleAddNode(serviceID string) {
 	this.lbs.AddNode(serviceID, 1)
-	log.Debugf("[lbs] add node %v-%v", this.category, serviceID)
+	//log.Debugf("[lbs] add node %v-%v", this.category, serviceID)
 	//for _, listener := range this.listeners {
 	//	listener.AddNode(service.GetID())
 	//}

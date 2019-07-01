@@ -181,15 +181,7 @@ func (this *ETCDServiceCenter) openTTLCheck(path string, data string) {
 	ticker := time.NewTicker(time.Second * time.Duration(this.ttl/2))
 	this.ttlCheck.Store(path, ticker)
 	go func(){
-		defer func() {
-			//处理消息异常
-			if err := recover(); err != nil {
-				switch err.(type) {
-				default:
-					exception.PrintStackDetail(err)
-				}
-			}
-		}()
+		exception.CatchStackDetail()
 		for {
 			select {
 			case <-ticker.C:
