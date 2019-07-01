@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"github.com/KylinHe/aliensboot-core/cluster/center/service"
 	"github.com/KylinHe/aliensboot-core/config"
+	"github.com/KylinHe/aliensboot-core/exception"
 	"github.com/KylinHe/aliensboot-core/log"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -180,13 +181,26 @@ func (this *ETCDServiceCenter) openTTLCheck(path string, data string) {
 	ticker := time.NewTicker(time.Second * time.Duration(this.ttl/2))
 	this.ttlCheck.Store(path, ticker)
 	go func(){
+		defer func() {
+			//处理消息异常
+			if err := recover(); err != nil {
+				switch err.(type) {
+				default:
+					exception.PrintStackDetail(err)
+				}
+			}
+		}()
 		for {
 			select {
 			case <-ticker.C:
 				//this.ttlCheck.Range(this.check)
-				resp, _ := this.client.Grant(context.TODO(), this.ttl)
+				resp, err := this.client.Grant(newTimeoutContext(), this.ttl)
+				if err != nil {
+					log.Debugf("ttl grant %v", err)
+					continue
+				}
 				//log.Debugf("ttl updata %v - %v", path, data)
-				_, err := this.client.Put(newTimeoutContext(), path, data, clientv3.WithLease(resp.ID))
+				_, err = this.client.Put(newTimeoutContext(), path, data, clientv3.WithLease(resp.ID))
 				if err != nil {
 					log.Debugf("ttl update %v", err)
 				}

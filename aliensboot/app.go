@@ -63,7 +63,7 @@ func Run(mods ...module.Module) {
 	if baseConfig.Cluster.IsValid() {
 		center.ClusterCenter.ConnectCluster(baseConfig.Cluster)
 	} else {
-		log.Infof("enable cluster %v", baseConfig.Cluster)
+		log.Infof("disable cluster %v", baseConfig.Cluster)
 	}
 
 	var moduleNames []string = nil

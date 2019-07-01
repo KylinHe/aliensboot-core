@@ -41,6 +41,11 @@ func (this *Database) Init(config config.DBConfig) error {
 		config.Address = address
 	}
 
+	name := os.Getenv("DBName")
+	if name != "" {
+		config.Name = name
+	}
+
 	c, err := Dial(config.Address, int(config.MaxSession))
 	if err != nil {
 		return err

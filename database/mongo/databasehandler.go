@@ -91,7 +91,7 @@ func (this *Database) EnsureTable(name string, data interface{}) error {
 					meta.AutoIncrement = true
 					err := this.dbContext.EnsureCounter(this.dbName, ID_STORE, name)
 					if err != nil {
-						log.Debug("[%v] ensure count err : %v", this.dbName, err)
+						log.Debugf("[%v] ensure count err : %v", this.dbName, err)
 					}
 				}
 			}
