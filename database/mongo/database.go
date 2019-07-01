@@ -1,6 +1,7 @@
 package mongo
 
 import (
+	"github.com/KylinHe/aliensboot-core/common/util"
 	"github.com/KylinHe/aliensboot-core/config"
 	"github.com/KylinHe/aliensboot-core/database"
 	"github.com/KylinHe/aliensboot-core/database/dbconfig"
@@ -30,21 +31,21 @@ type Database struct {
 
 //初始化连接数据库
 func (this *Database) Init(config config.DBConfig) error {
-	this.dbName = config.Name
-	if config.MaxSession == 0 {
-		config.MaxSession = 100
-	}
-
 	//优先使用环境变量
 	address := os.Getenv("DBAddress")
 	if address != "" {
 		config.Address = address
 	}
-
 	name := os.Getenv("DBName")
 	if name != "" {
 		config.Name = name
 	}
+	sessionNum := os.Getenv("DBMaxSession")
+	if sessionNum != "" {
+		config.MaxSession = uint(util.StringToInt(sessionNum))
+	}
+
+	this.dbName = config.Name
 
 	c, err := Dial(config.Address, int(config.MaxSession))
 	if err != nil {
