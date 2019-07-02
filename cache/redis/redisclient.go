@@ -17,6 +17,10 @@ import (
 	"time"
 )
 
+type ErrorHandler func(err error, command string, args ...interface{})
+
+var ErrNil = redis.ErrNil
+
 type RedisCacheClient struct {
 	MaxIdle     int
 	MaxActive   int
@@ -24,6 +28,7 @@ type RedisCacheClient struct {
 	Password    string
 	IdleTimeout time.Duration //180 * time.Second
 	pool        *redis.Pool
+	errorHandler ErrorHandler
 }
 
 //redis.pool.maxActive=200  #最大连接数：能够同时建立的“最大链接个数”
@@ -72,13 +77,13 @@ func (this *RedisCacheClient) Start() {
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.Dial("tcp", this.Address)
 			if err != nil {
-				log.Fatalf("start redis error : %v", err)
+				//log.Fatalf("start redis error : %v", err)
 				return nil, err
 			}
 			if this.Password != "" {
 				if _, err := c.Do("AUTH", this.Password); err != nil {
-					c.Close()
-					log.Fatalf("start redis error : %v", err)
+					//c.Close()
+					//log.Fatalf("start redis error : %v", err)
 					return nil, err
 				}
 			}
@@ -93,16 +98,29 @@ func (this *RedisCacheClient) Start() {
 }
 
 //关闭缓存客户端
-func (this *RedisCacheClient) Close() {
+func (this *RedisCacheClient) Close() error {
 	if this.pool != nil {
-		this.pool.Close()
+		return this.pool.Close()
 	}
+	return nil
+}
+
+func (this *RedisCacheClient) SetErrorHandler(handler ErrorHandler)  {
+	this.errorHandler = handler
+}
+
+func (this *RedisCacheClient) Do(command string, args ...interface{}) (reply interface{}, err error) {
+	conn := this.pool.Get()
+	defer conn.Close()
+	replay, err := conn.Do(command, args...)
+	if err != nil && this.errorHandler != nil {
+		this.errorHandler(err, command, args...)
+	}
+	return replay, err
 }
 
 func (this *RedisCacheClient) SetNX(key string, value interface{}) (bool, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	result, err := redis.Int(conn.Do(OP_SETNX, key, value))
+	result, err := redis.Int(this.Do(OP_SETNX, key, value))
 	if err != nil {
 		return false, err
 	}
@@ -116,92 +134,79 @@ func Int32(param int, err error) (int32, error) {
 
 //设置数据过期时间
 func (this *RedisCacheClient) Expire(key string, seconds int) error {
-	conn := this.pool.Get()
-	defer conn.Close()
-	_, err := conn.Do(OP_EXPIRE, key, seconds)
+	
+	_, err := this.Do(OP_EXPIRE, key, seconds)
 	return err
 }
 
 //添加数据
 func (this *RedisCacheClient) SetData(key string, value interface{}) error {
-	conn := this.pool.Get()
-	defer conn.Close()
-	_, err := conn.Do(OP_SET, key, value)
+	
+	_, err := this.Do(OP_SET, key, value)
 	return err
 }
 
 func (this *RedisCacheClient) Incr(key string) (int, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return redis.Int(conn.Do(OP_INCR, key))
+	
+	return redis.Int(this.Do(OP_INCR, key))
 }
 
 func (this *RedisCacheClient) Decr(key string) (int, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return redis.Int(conn.Do(OP_DECR, key))
+	
+	return redis.Int(this.Do(OP_DECR, key))
 }
 
 func (this *RedisCacheClient) SelectDB(dbNumber int) error {
-	conn := this.pool.Get()
-	defer conn.Close()
-	_, err := conn.Do(OP_SELECT, dbNumber)
+	
+	_, err := this.Do(OP_SELECT, dbNumber)
 	return err
 }
 
 func (this *RedisCacheClient) GetDataInt32(key string) (int32, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return Int32(redis.Int(conn.Do(OP_GET, key)))
+	
+	return Int32(redis.Int(this.Do(OP_GET, key)))
 }
 
 func (this *RedisCacheClient) GetDataInt64(key string) (int64, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return redis.Int64(conn.Do(OP_GET, key))
+	
+	return redis.Int64(this.Do(OP_GET, key))
 }
 
 //获取数据
 func (this *RedisCacheClient) GetData(key string) (string, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return redis.String(conn.Do(OP_GET, key))
+	
+	return redis.String(this.Do(OP_GET, key))
 }
 
 //导出数据
 func (this *RedisCacheClient) Dump(key string) (string, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return redis.String(conn.Do(OP_DUMP, key))
+	
+	return redis.String(this.Do(OP_DUMP, key))
 }
 
 //导入数据
 func (this *RedisCacheClient) Restore(key string, data string) (string, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return redis.String(conn.Do(OP_RESTORE, key, 0, data))
+	
+	return redis.String(this.Do(OP_RESTORE, key, 0, data))
 }
 
 //是否存在数据
 func (this *RedisCacheClient) Exists(key string) (bool, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return redis.Bool(conn.Do(OP_EXISTS, key))
+	
+	return redis.Bool(this.Do(OP_EXISTS, key))
 }
 
 //添加数据
 func (this *RedisCacheClient) DelData(key string) error {
-	conn := this.pool.Get()
-	defer conn.Close()
-	_, err := conn.Do(OP_DEL, key)
+	
+	_, err := this.Do(OP_DEL, key)
 	return err
 }
 
 //清除所有数据
 func (this *RedisCacheClient) FlashAll() error {
-	conn := this.pool.Get()
-	defer conn.Close()
-	_, err := conn.Do(OP_FLUSHALL)
+	
+	_, err := this.Do(OP_FLUSHALL)
 	return err
 }
 
@@ -212,7 +217,7 @@ func (this *RedisCacheClient) FlashAll() error {
 //	// 转换成json
 //	v,_ := json.Marshal(value)
 //	// 存redis
-//	_,err := conn.Do("SETNX",key, v)
+//	_,err := this.Do("SETNX",key, v)
 //	if err != nil {
 //		//log.Debug("%v",err)
 //		return false
@@ -225,7 +230,7 @@ func (this *RedisCacheClient) FlashAll() error {
 //	conn := this.pool.Get()
 //	defer conn.Close()
 //	var imap map[string]string
-//	value,err := redis.Bytes(conn.Do("GET",key))
+//	value,err := redis.Bytes(this.Do("GET",key))
 //	if err != nil {
 //		//log.Debug("%v",err)
 //		return nil
@@ -240,10 +245,10 @@ func (this *RedisCacheClient) FlashAll() error {
 //}
 
 //订阅数据变更
-func (this *RedisCacheClient) Subscribe(callback func(channel, value string), channel ...interface{}) {
+func (this *RedisCacheClient) Subscribe(callback func(channel, value string), channel ...interface{}) error {
 	//defer conn.Close()
 	psc := redis.PubSubConn{Conn: this.pool.Get()}
-	psc.Subscribe(channel...)
+	err := psc.Subscribe(channel...)
 	go func() {
 		for {
 			switch v := psc.Receive().(type) {
@@ -256,12 +261,13 @@ func (this *RedisCacheClient) Subscribe(callback func(channel, value string), ch
 			}
 		}
 	}()
+	return err
 }
 
-func (this *RedisCacheClient) PSubscribe(callback func(pattern, channel, value string), channel ...interface{}) {
+func (this *RedisCacheClient) PSubscribe(callback func(pattern, channel, value string), channel ...interface{}) error {
 	//defer conn.Close()
 	psc := &redis.PubSubConn{Conn: this.pool.Get()}
-	psc.PSubscribe(channel...)
+	err := psc.PSubscribe(channel...)
 	go func() {
 		for {
 			switch v := psc.Receive().(type) {
@@ -274,11 +280,11 @@ func (this *RedisCacheClient) PSubscribe(callback func(pattern, channel, value s
 			}
 		}
 	}()
+	return err
 }
 
 //发布数据
-func (this *RedisCacheClient) Publish(channel, value interface{}) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	conn.Do(OP_PUBLISH, channel, value)
+func (this *RedisCacheClient) Publish(channel, value interface{}) error {
+	_, err := this.Do(OP_PUBLISH, channel, value)
+	return err
 }

@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"github.com/KylinHe/aliensboot-core/log"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"reflect"
 	//"strconv"
@@ -13,9 +14,8 @@ import (
 
 
 const (
-	ID_STORE string = "_id"
-	ID_FIELD_NAME string = "ID"
-	INCREASE_ID_BASE int = 100000
+	IdStore        string = "_id"
+	IncreaseIdBase int    = 100000
 )
 
 
@@ -47,7 +47,7 @@ func (this *Database) reflectID(data interface{}, idName string) interface{} {
 //func (this *Database) EnsureCounter(data interface{}) {
 //	this.validateConnection()
 //	tableMeta := this.GetTableMeta(data)
-//	this.dbContext.EnsureCounter(this.dbName, ID_STORE, tableMeta)
+//	this.dbContext.EnsureCounter(this.dbName, IdStore, tableMeta)
 //}
 
 //确保索引
@@ -61,7 +61,7 @@ func (this *Database) reflectID(data interface{}, idName string) interface{} {
 //}
 
 func (this *Database) EnsureTable(name string, data interface{}) error {
-	this.validateConnection()
+	//this.validateConnection()
 	tableType := reflect.TypeOf(data)
 	if tableType == nil || tableType.Kind() != reflect.Ptr {
 		return errors.New("table data pointer required")
@@ -75,21 +75,27 @@ func (this *Database) EnsureTable(name string, data interface{}) error {
 		if strings.Contains(uniqueValue, "true") {
 			key := field.Tag.Get("bson")
 			if key != "" {
-				this.dbContext.EnsureUniqueIndex(this.dbName, name, []string{key})
+				err := this.dbContext.EnsureUniqueIndex(this.dbName, name, []string{key})
+				if err != nil {
+					return err
+				}
 			}
 		} else if strings.Contains(uniqueValue, "false") {
 			key := field.Tag.Get("bson")
 			if key != "" {
-				this.dbContext.EnsureIndex(this.dbName, name, []string{key})
+				err := this.dbContext.EnsureIndex(this.dbName, name, []string{key})
+				if err != nil {
+					return err
+				}
 			}
 		} else {
 			idKey := field.Tag.Get("bson")
-			if idKey == ID_STORE {
+			if idKey == IdStore {
 				meta.IDName = field.Name
 				value := field.Tag.Get("gorm")
 				if strings.Contains(value, "AUTO_INCREMENT") {
 					meta.AutoIncrement = true
-					err := this.dbContext.EnsureCounter(this.dbName, ID_STORE, name)
+					err := this.dbContext.EnsureCounter(this.dbName, IdStore, name, IncreaseIdBase)
 					if err != nil {
 						log.Debugf("[%v] ensure count err : %v", this.dbName, err)
 					}
@@ -123,8 +129,8 @@ func (this *Database) EnsureIndex(name string, key []string, unique bool) error 
 //	if err != nil {
 //		return -1, err
 //	}
-//	newid, _ := this.dbContext.NextSeq(this.dbName, ID_STORE, tableMeta.Name)
-//	newid += INCREASE_ID_BASE
+//	newid, _ := this.dbContext.NextSeq(this.dbName, IdStore, tableMeta.Name)
+//	newid += IncreaseIdBase
 //	return int32(newid), nil
 //}
 //
@@ -134,227 +140,175 @@ func (this *Database) EnsureIndex(name string, key []string, unique bool) error 
 //	if err != nil {
 //		return err
 //	}
-//	return this.database.C(tableMeta.Name).Insert(data)
+//	return collection.Insert(data)
 //}
 
 //插入新数据
 func (this *Database) Insert(data interface{}) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return err
-	}
-	if tableMeta.AutoIncrement {
-		newid, err1 := this.dbContext.NextSeq(this.dbName, ID_STORE, tableMeta.Name)
-		newid += INCREASE_ID_BASE
-		if err1 != nil {
-			return err1
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		if tableMeta.AutoIncrement {
+			newId, err1 := this.dbContext.NextSeq(this.dbName, IdStore, tableMeta.Name)
+			if err1 != nil {
+				return err1
+			}
+			reflect.ValueOf(data).Elem().FieldByName(tableMeta.IDName).SetInt(newId)
 		}
-		reflect.ValueOf(data).Elem().FieldByName(tableMeta.IDName).SetInt(int64(newid))
-	}
-	return this.database.C(tableMeta.Name).Insert(data)
+
+		return collection.Insert(data)
+	})
 }
 
 
 func (this *Database) QueryAllLimit(data interface{}, result interface{}, limit int, callback func(interface{}) bool) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return err
-	}
-	skip := 0
-	for {
-		err := this.database.C(tableMeta.Name).Find(nil).Limit(limit).Skip(skip).All(result)
-		if err != nil {
-			return err
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		skip := 0
+		for {
+			err := collection.Find(nil).Limit(limit).Skip(skip).All(result)
+			if err != nil {
+				return err
+			}
+			skip += limit
+			if callback(result) {
+				return nil
+			}
 		}
-		skip += limit
-		if callback(result) {
-			return nil
-		}
-	}
+	})
+
 }
 
 //查询所有数据
 func (this *Database) QueryAll(data interface{}, result interface{}) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return err
-	}
-	return this.database.C(tableMeta.Name).Find(nil).All(result)
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		return collection.Find(nil).All(result)
+	})
 }
 
 //查询单条记录
 func (this *Database) QueryOne(data interface{}) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return err
-	}
-	return this.database.C(tableMeta.Name).FindId(this.reflectID(data, tableMeta.IDName)).One(data)
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		return collection.FindId(this.reflectID(data, tableMeta.IDName)).One(data)
+	})
+
 }
 
 func (this *Database) DeleteOne(data interface{}) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return err
-	}
-	return this.database.C(tableMeta.Name).RemoveId(this.reflectID(data, tableMeta.IDName))
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		return collection.RemoveId(this.reflectID(data, tableMeta.IDName))
+	})
 }
 
 func (this *Database) DeleteOneCondition(data interface{}, selector interface{}) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return err
-	}
-	return this.database.C(tableMeta.Name).Remove(selector)
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		return collection.Remove(selector)
+	})
 }
 
 func (this *Database) DeleteAllCondition(data interface{}, selector interface{}) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		_, err := collection.RemoveAll(selector)
 		return err
-	}
-	_, err1 := this.database.C(tableMeta.Name).RemoveAll(selector)
-	return err1
+	})
 }
 
 //查询单条记录
 func (this *Database) IDExist(data interface{}) (bool, error) {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return false, err
-	}
-	count, err1 := this.database.C(tableMeta.Name).FindId(this.reflectID(data, tableMeta.IDName)).Count()
-	return count != 0, err1
+	return this.BoolRef(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) (bool, error) {
+		count, err := collection.FindId(this.reflectID(data, tableMeta.IDName)).Count()
+		return count != 0, err
+	})
+
 }
 
 
 //按条件多条查询
 func (this *Database) QueryAllConditionLimit(data interface{}, condition string, value interface{}, result interface{}, limit int, callback func(interface{}) bool) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return err
-	}
-	skip := 0
-	for {
-		err := this.database.C(tableMeta.Name).Find(bson.M{condition: value}).Limit(limit).Skip(skip).All(result)
-		if err != nil {
-			return err
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		skip := 0
+		for {
+			err := collection.Find(bson.M{condition: value}).Limit(limit).Skip(skip).All(result)
+			if err != nil {
+				return err
+			}
+			skip += limit
+			if callback(result) {
+				return nil
+			}
 		}
-		skip += limit
-		if callback(result) {
-			return nil
-		}
-	}
+	})
+
 }
 
 func (this *Database) QueryAllConditionsLimit(data interface{}, conditions map[string]interface{}, result interface{}, limit int, sort ...string) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return nil
-	}
-	return this.database.C(tableMeta.Name).Find(conditions).Sort(sort...).Limit(limit).All(result)
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		return collection.Find(conditions).Sort(sort...).Limit(limit).All(result)
+	})
 }
 
 func (this *Database) QueryAllConditionSkipLimit(data interface{}, condition string, value interface{}, result interface{}, skip int, limit int, sort ...string) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return err
-	}
-	return this.database.C(tableMeta.Name).Find(bson.M{condition: value}).Sort(sort...).Limit(limit).Skip(skip).All(result)
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		return collection.Find(bson.M{condition: value}).Sort(sort...).Limit(limit).Skip(skip).All(result)
+	})
 }
 
 func (this *Database) QueryAllConditionsSkipLimit(data interface{}, conditions map[string]interface{}, result interface{}, skip int, limit int, sort ...string) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return err
-	}
-	return this.database.C(tableMeta.Name).Find(conditions).Sort(sort...).Limit(limit).Skip(skip).All(result)
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		return collection.Find(conditions).Sort(sort...).Limit(limit).Skip(skip).All(result)
+	})
 }
 
 //按条件多条查询
 func (this *Database) QueryAllCondition(data interface{}, condition string, value interface{}, result interface{}) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return err
-	}
-	return this.database.C(tableMeta.Name).Find(bson.M{condition: value}).All(result)
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		return collection.Find(bson.M{condition: value}).All(result)
+	})
+
 }
 
 func (this *Database) QueryAllConditions(data interface{}, conditions map[string]interface{}, result interface{}) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return err
-	}
-	return this.database.C(tableMeta.Name).Find(conditions).All(result)
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		return collection.Find(conditions).All(result)
+	})
+
 }
 
 func (this *Database) QueryConditionCount(data interface{}, condition string, value interface{}) (int, error) {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return 0, err
-	}
-	return this.database.C(tableMeta.Name).Find(bson.M{condition: value}).Count()
+	return this.IntRef(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) (int, error) {
+		return collection.Find(bson.M{condition: value}).Count()
+	})
+
 }
 
 func (this *Database) QueryConditionsCount(data interface{}, query interface{}) (int, error) {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return 0, err
-	}
-	return this.database.C(tableMeta.Name).Find(query).Count()
+	return this.IntRef(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) (int, error) {
+		return collection.Find(query).Count()
+	})
+
 }
 
 func (this *Database) PipeAllConditions(data interface{}, pipeline interface{}, result interface{}) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return err
-	}
-	return this.database.C(tableMeta.Name).Pipe(pipeline).All(result)
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		return collection.Pipe(pipeline).All(result)
+	})
 }
 
 func (this *Database) QueryOneConditions (data interface{}, conditions map[string]interface{}) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return err
-	}
-	return this.database.C(tableMeta.Name).Find(conditions).One(data)
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		return collection.Find(conditions).One(data)
+	})
 }
 
 //按条件单条查询
 func (this *Database) QueryOneCondition(data interface{}, condition string, value interface{}) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return err
-	}
-	return this.database.C(tableMeta.Name).Find(bson.M{condition: value}).One(data)
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		return collection.Find(bson.M{condition: value}).One(data)
+	})
 }
 
 //更新单条数据
 func (this *Database) UpdateOne(data interface{}) error {
-	this.validateConnection()
-	tableMeta, err := this.GetTableMeta(data)
-	if err != nil {
-		return err
-	}
-	return this.database.C(tableMeta.Name).UpdateId(this.reflectID(data, tableMeta.IDName), data)
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		return collection.UpdateId(this.reflectID(data, tableMeta.IDName), data)
+	})
 }
 
 func (this *Database) ForceUpdateOne(data interface{}) error {
@@ -369,9 +323,4 @@ func (this *Database) ForceUpdateOne(data interface{}) error {
 	}
 }
 
-//原生的更新语句
-//TODO 需要拓展到内存映射修改，减少开发量
-func (this *Database) Update(collection string, selector interface{}, update interface{}) error {
-	this.validateConnection()
-	return this.database.C(collection).Update(selector, update)
-}
+

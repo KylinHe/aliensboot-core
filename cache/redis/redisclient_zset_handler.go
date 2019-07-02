@@ -46,9 +46,8 @@ func Ranks(result interface{}, err error) ([]Rank, error) {
 //ZADD key score member [[score member] [score member] ...]
 //将一个或多个 member 元素及其 score 值加入到有序集 key 当中。
 func (this *RedisCacheClient) ZAdd(key string, score int64, member interface{}) error {
-	conn := this.pool.Get()
-	defer conn.Close()
-	_, err := conn.Do(OP_Z_ADD, key, score, member)
+	
+	_, err := this.Do(OP_Z_ADD, key, score, member)
 	return err
 }
 
@@ -58,16 +57,14 @@ func (this *RedisCacheClient) ZAdd(key string, score int64, member interface{}) 
 //
 //当 key 存在但不是有序集类型时，返回一个错误。
 func (this *RedisCacheClient) ZRem(key string, member interface{}) error {
-	conn := this.pool.Get()
-	defer conn.Close()
-	_, err := conn.Do(OP_Z_REM, key, member)
+	
+	_, err := this.Do(OP_Z_REM, key, member)
 	return err
 }
 
 func (this *RedisCacheClient) ZCount(key string, min int32, max int32) (int, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return redis.Int(conn.Do(OP_Z_COUNT, key, min, max))
+	
+	return redis.Int(this.Do(OP_Z_COUNT, key, min, max))
 }
 
 
@@ -76,7 +73,7 @@ func (this *RedisCacheClient) ZCount(key string, min int32, max int32) (int, err
 //func (this *RedisCacheClient)ZAdds(key string, scoreMembers ...string) bool{
 //	conn := this.pool.Get()
 //	defer conn.Close()
-//	_ , err := conn.Do(OP_Z_ADD, key, scoreMembers...)
+//	_ , err := this.Do(OP_Z_ADD, key, scoreMembers...)
 //	if  err != nil{
 //		//log.Debug("%v",err)
 //		return false
@@ -97,23 +94,21 @@ ZRANGEBYSCORE key min max [WITHSCORES] [LIMIT offset count]
 该选项自 Redis 2.0 版本起可用。
 */
 func (this *RedisCacheClient) ZRangeByScoreLimit(key string, min int32, max int32, offset int32, count int32) ([]Rank, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return Ranks(conn.Do(OP_Z_RANGEBYSCORE, key, min, max, PARAM_WITHSCORES, PARAM_LIMIT, offset, count))
+	
+	return Ranks(this.Do(OP_Z_RANGEBYSCORE, key, min, max, PARAM_WITHSCORES, PARAM_LIMIT, offset, count))
 }
 
 //获取score小于 {max}的{count}个信息
 func (this *RedisCacheClient) ZRevRangeByScoreBeforeLimit(key string, max int32, count int32) ([]string, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return redis.Strings(conn.Do(OP_Z_REVRANGEBYSCORE, key, max, PARAM_Z_MIN, PARAM_LIMIT, 0, count))
+	
+	return redis.Strings(this.Do(OP_Z_REVRANGEBYSCORE, key, max, PARAM_Z_MIN, PARAM_LIMIT, 0, count))
 }
 
 //获取score小于 {max}的{count}个信息
 //func (this *RedisCacheClient)ZRangeByScoreBeforeLimit(key string, max int32, count int32) []string {
 //	conn := this.pool.Get()
 //	defer conn.Close()
-//	result,err := redis.Strings(conn.Do(OP_Z_RANGEBYSCORE,key,PARAM_Z_MAX,max,PARAM_LIMIT,0,count))
+//	result,err := redis.Strings(this.Do(OP_Z_RANGEBYSCORE,key,PARAM_Z_MAX,max,PARAM_LIMIT,0,count))
 //	if  err != nil{
 //		//log.Debug("%v",err)
 //	}
@@ -124,34 +119,29 @@ func (this *RedisCacheClient) ZRevRangeByScoreBeforeLimit(key string, max int32,
 //返回有序集 key 中，指定区间内的成员。
 //其中成员的位置按 score 值递增(从小到大)来排序。
 func (this *RedisCacheClient) ZRange(key string, start int32, stop int32) ([]string, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return redis.Strings(conn.Do(OP_Z_RANGE, key, start, stop))
+	
+	return redis.Strings(this.Do(OP_Z_RANGE, key, start, stop))
 }
 
 //ZREVRANGE key start stop [WITHSCORES]
 //返回有序集 key 中，指定区间内的成员。
 //其中成员的位置按 score 值递减(从大到小)来排列
 func (this *RedisCacheClient) ZRevRange(key string, start int32, stop int32) ([]string, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return redis.Strings(conn.Do(OP_Z_REVRANGE, key, start, stop))
+	
+	return redis.Strings(this.Do(OP_Z_REVRANGE, key, start, stop))
 }
 
 func (this *RedisCacheClient) ZRangeWithScore(key string, start int32, stop int32) ([]Rank, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return Ranks(conn.Do(OP_Z_RANGE, key, start, stop, PARAM_WITHSCORES))
+	
+	return Ranks(this.Do(OP_Z_RANGE, key, start, stop, PARAM_WITHSCORES))
 }
 
 func (this *RedisCacheClient) ZRevRangeWithScore(key string, start int32, stop int32) ([]Rank, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return Ranks(conn.Do(OP_Z_REVRANGE, key, start, stop, PARAM_WITHSCORES))
+	
+	return Ranks(this.Do(OP_Z_REVRANGE, key, start, stop, PARAM_WITHSCORES))
 }
 
 func (this *RedisCacheClient) ZRevRank(key string, member interface{}) (int, error) {
-	conn := this.pool.Get()
-	defer conn.Close()
-	return redis.Int(conn.Do(OP_Z_REVRANK, key, member))
+	
+	return redis.Int(this.Do(OP_Z_REVRANK, key, member))
 }

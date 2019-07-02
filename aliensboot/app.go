@@ -112,6 +112,7 @@ func Run(mods ...module.Module) {
 	module.Destroy()
 	//close cluster
 	center.ClusterCenter.Close()
+	log.Infof("AliensBoot closed down (signal: %v)", sig)
 }
 
 func contains(modules []string, module string) bool {

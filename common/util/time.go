@@ -12,7 +12,7 @@ package util
 import "time"
 
 const (
-	DURATION_DAY time.Duration = 24 * time.Hour
+	DurationDay time.Duration = 24 * time.Hour
 )
 
 //获取当天开始时间
@@ -34,7 +34,7 @@ func GetEmptyTime() time.Time {
 func GetTodayEnd() time.Time {
 	t := time.Now()
 	tm1 := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
-	return tm1.Add(DURATION_DAY)
+	return tm1.Add(DurationDay)
 }
 
 //获取当前的日志字符串打印
@@ -46,3 +46,9 @@ func GetCurrentDayStr() string {
 func GetTime(timestamp int64) time.Time {
 	return time.Unix(timestamp, 0)
 }
+
+
+func GetSecondDuration(second int) time.Duration {
+	return time.Duration(second) * time.Second
+}
+

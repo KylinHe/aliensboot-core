@@ -2,11 +2,12 @@ package mongo
 
 import (
 	"container/heap"
+	"github.com/KylinHe/aliensboot-core/common/util"
+	"github.com/KylinHe/aliensboot-core/config"
 	"github.com/KylinHe/aliensboot-core/log"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"sync"
-	"time"
 )
 
 // session
@@ -52,37 +53,36 @@ type DialContext struct {
 }
 
 // goroutine safe
-func Dial(url string, sessionNum int) (*DialContext, error) {
-	c, err := DialWithTimeout(url, sessionNum, 10*time.Second, 5*time.Minute)
-	return c, err
-}
+//func Dial() (*DialContext, error) {
+//
+//	, , mode mgo.Mode
+//	c, err := DialWithTimeout(config.Address, int(config.MaxSession), 10*time.Second, 5*time.Minute)
+//	return c, err
+//}
 
 // goroutine safe
-func DialWithTimeout(url string, sessionNum int, dialTimeout time.Duration, timeout time.Duration) (*DialContext, error) {
-	if sessionNum <= 0 {
-		sessionNum = 100
-		log.Warnf("invalid sessionNum, reset to %v", sessionNum)
-	}
-
-	s, err := mgo.DialWithTimeout(url, dialTimeout)
+func Dial(config config.DBConfig) (*DialContext, error) {
+	s, err := mgo.DialWithTimeout(config.Address, util.GetSecondDuration(config.DialTimeout))
 	if err != nil {
 		return nil, err
 	}
 	//最终一致性
-	s.SetMode(mgo.Eventual, false)
-	s.SetSyncTimeout(timeout)
-	s.SetSocketTimeout(timeout)
+	//s.SetMode(mgo.Eventual, false)
+	if config.Mode != nil {
+		s.SetMode(mgo.Mode(*config.Mode), false)
+	}
+	s.SetSyncTimeout(util.GetSecondDuration(config.SyncTimeout))
+	s.SetSocketTimeout(util.GetSecondDuration(config.SocketTimeout))
 
 	c := new(DialContext)
 
 	// sessions
-	c.sessions = make(SessionHeap, sessionNum)
+	c.sessions = make(SessionHeap, config.MaxSession)
 	c.sessions[0] = &Session{s, 0, 0}
-	for i := 1; i < sessionNum; i++ {
+	for i := 1; i < int(config.MaxSession); i++ {
 		c.sessions[i] = &Session{s.New(), 0, i}
 	}
 	heap.Init(&c.sessions)
-
 	return c, nil
 }
 
@@ -121,13 +121,13 @@ func (c *DialContext) UnRef(s *Session) {
 }
 
 // goroutine safe
-func (c *DialContext) EnsureCounter(db string, collection string, id string) error {
+func (c *DialContext) EnsureCounter(db string, collection string, id string, startId int) error {
 	s := c.Ref()
 	defer c.UnRef(s)
 
 	err := s.DB(db).C(collection).Insert(bson.M{
 		"_id": id,
-		"seq": 0,
+		"seq": startId,
 	})
 	if mgo.IsDup(err) {
 		return nil
@@ -137,12 +137,12 @@ func (c *DialContext) EnsureCounter(db string, collection string, id string) err
 }
 
 // goroutine safe
-func (c *DialContext) NextSeq(db string, collection string, id string) (int, error) {
+func (c *DialContext) NextSeq(db string, collection string, id string) (int64, error) {
 	s := c.Ref()
 	defer c.UnRef(s)
 
 	var res struct {
-		Seq int
+		Seq int64
 	}
 	_, err := s.DB(db).C(collection).FindId(id).Apply(mgo.Change{
 		Update:    bson.M{"$inc": bson.M{"seq": 1}},

@@ -10,7 +10,11 @@
 package config
 
 type DBConfig struct {
-	Name       string //database name
-	Address    string //database address
-	MaxSession uint   //database connection pool limit
+	Name       string 	//database name
+	Address    string 	//database address
+	MaxSession uint   	//database connection pool limit
+	DialTimeout int   	//database dial timeout (second)
+	SocketTimeout int
+	SyncTimeout int 	//database session timeout (second)
+	Mode *int
 }

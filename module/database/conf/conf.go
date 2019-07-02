@@ -10,6 +10,6 @@
 package conf
 
 const (
-	DBDebug                    = true //是否开启数据库操作日志
-	DBTimeoutThreshold float64 = 1    //数据库操作超时告警阈值 1秒
+	//DBDebug                    = true //是否开启数据库操作日志
+	DBTimeoutThreshold float64 = 2    //数据库操作超时告警阈值 1秒
 )
