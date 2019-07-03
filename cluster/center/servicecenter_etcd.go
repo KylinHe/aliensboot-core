@@ -52,7 +52,10 @@ func (this *ETCDServiceCenter) ConnectCluster(config config.ClusterConfig) {
 	etcdConfig := clientv3.Config{
 		Endpoints:   config.Servers,
 		DialTimeout: time.Second * time.Duration(config.Timeout),
+		Username:config.Username,
+		Password:config.Password,
 	}
+
 	client, err := clientv3.New(etcdConfig)
 	if err != nil {
 		log.Fatal(err)

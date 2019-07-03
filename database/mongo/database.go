@@ -103,7 +103,7 @@ func (this *Database) Ref(data interface{}, handler func(meta *dbconfig.TableMet
 		return err
 	}
 	s := this.dbContext.Ref()
-	defer s.Close()
+	defer this.dbContext.UnRef(s)
 	collection := s.DB(this.dbName).C(tableMeta.Name)
 	err = handler(tableMeta, collection)
 	if err != nil && this.errorHandler != nil {
@@ -121,7 +121,7 @@ func (this *Database) BoolRef(data interface{}, handler func(meta *dbconfig.Tabl
 		return false, err
 	}
 	s := this.dbContext.Ref()
-	defer s.Close()
+	defer this.dbContext.UnRef(s)
 	collection := s.DB(this.dbName).C(tableMeta.Name)
 	result, err := handler(tableMeta, collection)
 	if err != nil && this.errorHandler != nil {
@@ -136,7 +136,7 @@ func (this *Database) IntRef(data interface{}, handler func(meta *dbconfig.Table
 		return 0, err
 	}
 	s := this.dbContext.Ref()
-	defer s.Close()
+	defer this.dbContext.UnRef(s)
 	collection := s.DB(this.dbName).C(tableMeta.Name)
 	result, err := handler(tableMeta, collection)
 	if err != nil && this.errorHandler != nil {

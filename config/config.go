@@ -39,6 +39,9 @@ type ClusterConfig struct {
 	Servers []string `yaml:"servers"` //集群服务器列表
 	Timeout uint     `yaml:"timeout"`
 
+	Username string     `yaml:"username"`
+	Password string     `yaml:"password"`
+
 	TTL int64 `yaml:"ttl"` //
 
 	//CertFile string
