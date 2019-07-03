@@ -49,6 +49,11 @@ func (this *RedisCacheClient) OGetFieldByID(data interface{}, id interface{}, fi
 	return this.HGet(key, fieldName)
 }
 
+func (this *RedisCacheClient) ODelFieldByID(data interface{}, id interface{}, fieldName string) error {
+	key := newHashKey(data, id)
+	return this.HDel(key, fieldName)
+}
+
 func (this *RedisCacheClient) OSetFieldByID(data interface{}, id interface{}, fieldName string, value interface{}) error {
 	key := newHashKey(data, id)
 	return this.HSet(key, fieldName, value)
