@@ -281,7 +281,7 @@ func (this *ETCDServiceCenter) handleService(eventType mvccpb.Event_EventType, v
 func (this *ETCDServiceCenter) SubscribeConfig(configName string, configHandler ConfigListener) {
 	configPath := this.configRoot + NodeSplit + configName
 	rsp, err := this.client.Get(newTimeoutContext(), configPath)
-	if err != nil {
+	if err != nil || rsp.Kvs == nil{
 		log.Fatalf("subscribe config %v error: %v", configPath, err)
 		return
 	}
@@ -296,7 +296,11 @@ func (this *ETCDServiceCenter) SubscribeConfig(configName string, configHandler 
 			event, _ := <-ch
 			for _, serviceEvent := range event.Events {
 				if serviceEvent.Type == clientv3.EventTypePut {
-					configHandler(serviceEvent.Kv.Value)
+					if serviceEvent.Kv.Value == nil || len(serviceEvent.Kv.Value) == 0 {
+						log.Errorf("invalid config %v", configPath)
+					} else {
+						configHandler(serviceEvent.Kv.Value)
+					}
 				}
 			}
 		}
