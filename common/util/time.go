@@ -52,3 +52,7 @@ func GetSecondDuration(second int) time.Duration {
 	return time.Duration(second) * time.Second
 }
 
+func GetSecondDurationInt64(second int64) time.Duration {
+	return time.Duration(second) * time.Second
+}
+

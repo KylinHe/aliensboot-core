@@ -65,7 +65,7 @@ func (s *Skeleton) Init() {
 		s.AsynCallLen = 0
 	}
 
-	s.g = pool.New(s.GoLen)
+	s.g = pool.NewGoPool(s.GoLen)
 	s.dispatcher = task.NewDispatcher(s.TimerDispatcherLen)
 	s.client = chanrpc.NewClient(s.AsynCallLen)
 	s.server = s.ChanRPCServer

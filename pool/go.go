@@ -24,7 +24,7 @@ type LinearContext struct {
 	mutexExecution sync.Mutex
 }
 
-func New(l int) *Go {
+func NewGoPool(l int) *Go {
 	g := new(Go)
 	g.ChanCb = make(chan func(), l)
 	return g

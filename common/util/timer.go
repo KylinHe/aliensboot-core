@@ -99,6 +99,25 @@ func (h *_TimerHeap) Pop() (ret interface{}) {
 // Type of callback function
 type CallbackFunc func()
 
+func (manager *TimerManager) AddTimeCallback(fireTime time.Time, callback CallbackFunc) *Timer {
+	t := &Timer{
+		fireTime: fireTime,
+		interval: fireTime.Sub(time.Now()),
+		callback: callback,
+		repeat:   false,
+	}
+	t.addSeq = manager.nextAddSeq // set addseq when locked
+	manager.nextAddSeq += 1
+
+	heap.Push(manager._TimerHeap, t)
+	return t
+}
+
+func (manager *TimerManager) AddTimestampCallback(timestamp int64, callback CallbackFunc) *Timer {
+	fireTime := time.Unix(timestamp, 0)
+	return manager.AddTimeCallback(fireTime, callback)
+}
+
 // Add a callback which will be called after specified duration
 func (manager *TimerManager) AddCallback(d time.Duration, callback CallbackFunc) *Timer {
 	t := &Timer{
