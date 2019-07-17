@@ -56,7 +56,7 @@ func (e *Entity) AddTimer(d time.Duration, repeat bool, method string, args ...i
 		Repeat:         repeat,
 	}
 	e.timers[tid] = info
-	info.rawTimer = e.addRawTimer(d, func() {
+	info.rawTimer = e.addRawTimer(d, func([]interface{}) {
 		e.triggerTimer(tid, true)
 	})
 	return tid
@@ -78,7 +78,7 @@ func (e *Entity) triggerTimer(tid EntityTimerID, isRepeat bool) {
 		delete(e.timers, tid)
 	} else {
 		if !isRepeat {
-			timerInfo.rawTimer = e.addRawTimer(timerInfo.RepeatInterval, func() {
+			timerInfo.rawTimer = e.addRawTimer(timerInfo.RepeatInterval, func([]interface{}) {
 				e.triggerTimer(tid, true)
 			})
 		}
@@ -97,9 +97,9 @@ func (e *Entity) addRawTimer(d time.Duration, cb util.CallbackFunc) *util.Timer 
 
 func (e *Entity) addRawCallback(d time.Duration, cb util.CallbackFunc) *util.Timer {
 	var t *util.Timer
-	t = EntityManager.addCallback(d, func() {
+	t = EntityManager.addCallback(d, func([]interface{}) {
 		delete(e.rawTimers, t)
-		cb()
+		cb(nil)
 	})
 	e.rawTimers[t] = struct{}{}
 	return t

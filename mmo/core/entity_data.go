@@ -15,7 +15,7 @@ func (e *Entity) IsPersistent() bool {
 }
 
 // Save the entity
-func (e *Entity) Save() {
+func (e *Entity) Save([]interface{}) {
 	if !e.IsPersistent() {
 		return
 	}
@@ -67,7 +67,7 @@ func (e *Entity) restoreTimers(data []byte) error {
 	for _, timer := range timers {
 		tid := e.genTimerId()
 		e.timers[tid] = timer
-		timer.rawTimer = e.addRawCallback(timer.FireTime.Sub(now), func() {
+		timer.rawTimer = e.addRawCallback(timer.FireTime.Sub(now), func([]interface{}) {
 			e.triggerTimer(tid, false)
 		})
 	}

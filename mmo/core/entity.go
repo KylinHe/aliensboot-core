@@ -187,7 +187,7 @@ func (e *Entity) destroyEntity(isMigrate bool) {
 	e.clearRawTimers()
 
 	if !isMigrate {
-		e.Save()
+		e.Save(nil)
 	}
 	e.destroyed = true
 	EntityManager.del(e)

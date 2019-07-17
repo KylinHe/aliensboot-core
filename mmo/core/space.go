@@ -57,7 +57,7 @@ func (space *Space) OnInit() {
 }
 
 //tick
-func (space *Space) OnTick() {
+func (space *Space) OnTick([]interface{}) {
 	for entity, _ := range space.entities {
 		entity.OnTick(tickInterval)
 	}
