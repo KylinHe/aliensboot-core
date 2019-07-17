@@ -45,6 +45,7 @@ type Timer struct {
 	fireTime time.Time
 	interval time.Duration
 	callback CallbackFunc
+	param []interface{}
 	repeat   bool
 	addSeq   uint
 }
@@ -97,13 +98,14 @@ func (h *_TimerHeap) Pop() (ret interface{}) {
 }
 
 // Type of callback function
-type CallbackFunc func()
+type CallbackFunc func(param []interface{})
 
-func (manager *TimerManager) AddTimeCallback(fireTime time.Time, callback CallbackFunc) *Timer {
+func (manager *TimerManager) AddTimeCallback(fireTime time.Time, callback CallbackFunc, param ...interface{}) *Timer {
 	t := &Timer{
 		fireTime: fireTime,
 		interval: fireTime.Sub(time.Now()),
 		callback: callback,
+		param: param,
 		repeat:   false,
 	}
 	t.addSeq = manager.nextAddSeq // set addseq when locked
@@ -113,13 +115,13 @@ func (manager *TimerManager) AddTimeCallback(fireTime time.Time, callback Callba
 	return t
 }
 
-func (manager *TimerManager) AddTimestampCallback(timestamp int64, callback CallbackFunc) *Timer {
+func (manager *TimerManager) AddTimestampCallback(timestamp int64, callback CallbackFunc, param ...interface{}) *Timer {
 	fireTime := time.Unix(timestamp, 0)
-	return manager.AddTimeCallback(fireTime, callback)
+	return manager.AddTimeCallback(fireTime, callback, param)
 }
 
 // Add a callback which will be called after specified duration
-func (manager *TimerManager) AddCallback(d time.Duration, callback CallbackFunc) *Timer {
+func (manager *TimerManager) AddCallback(d time.Duration, callback CallbackFunc, param ...interface{}) *Timer {
 	t := &Timer{
 		fireTime: time.Now().Add(d),
 		interval: d,
@@ -179,7 +181,9 @@ func (manager *TimerManager) Tick() {
 		}
 		// unlock the lock to run callback, because callback may add more callbacks / timers
 		//timerHeapLock.Unlock()
-		runCallback(callback)
+		callback(t.param)
+		//runCallback(callback, t.param)
+		//runCallback(callback, t.param)
 		//timerHeapLock.Lock()
 
 		if t.repeat {
@@ -208,7 +212,7 @@ func (manager *TimerManager) selfTickRoutine(tickInterval time.Duration) {
 	}
 }
 
-func runCallback(callback CallbackFunc) {
+func runCallback(callback CallbackFunc, param []interface{}) {
 	defer func() {
 		err := recover()
 		if err != nil {
@@ -216,5 +220,5 @@ func runCallback(callback CallbackFunc) {
 			debug.PrintStack()
 		}
 	}()
-	callback()
+	callback(param)
 }
