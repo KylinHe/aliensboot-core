@@ -117,7 +117,7 @@ func (manager *TimerManager) AddTimeCallback(fireTime time.Time, callback Callba
 
 func (manager *TimerManager) AddTimestampCallback(timestamp int64, callback CallbackFunc, param ...interface{}) *Timer {
 	fireTime := time.Unix(timestamp, 0)
-	return manager.AddTimeCallback(fireTime, callback, param)
+	return manager.AddTimeCallback(fireTime, callback, param...)
 }
 
 // Add a callback which will be called after specified duration
@@ -126,6 +126,7 @@ func (manager *TimerManager) AddCallback(d time.Duration, callback CallbackFunc,
 		fireTime: time.Now().Add(d),
 		interval: d,
 		callback: callback,
+		param:  param,
 		repeat:   false,
 	}
 	t.addSeq = manager.nextAddSeq // set addseq when locked
