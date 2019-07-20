@@ -34,6 +34,7 @@ type IDatabaseHandler interface {
 	//InsertWithoutID(data interface{}) error
 	//GenTimestampId(data interface{}) (int64, error)
 	Insert(data interface{}) error
+	InsertMulti(data []interface{}) error  //插入多条数据
 	QueryAll(data interface{}, result interface{}) error
 	QueryAllLimit(data interface{}, result interface{}, limit int, callback func(interface{}) bool) error
 	QueryAllConditionLimit(data interface{}, condition string, value interface{}, result interface{}, limit int, callback func(interface{}) bool) error

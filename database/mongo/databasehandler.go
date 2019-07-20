@@ -158,6 +158,25 @@ func (this *Database) Insert(data interface{}) error {
 	})
 }
 
+func (this *Database) InsertMulti(datas []interface{}) error {
+	if datas == nil || len(datas) == 0 {
+		return nil
+	}
+	data := datas[0]
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		if tableMeta.AutoIncrement {
+			newId, err1 := this.dbContext.NextSeq(this.dbName, IdStore, tableMeta.Name)
+			if err1 != nil {
+				return err1
+			}
+			reflect.ValueOf(data).Elem().FieldByName(tableMeta.IDName).SetInt(newId)
+		}
+		return collection.Insert(datas...)
+	})
+}
+
+
+
 
 func (this *Database) QueryAllLimit(data interface{}, result interface{}, limit int, callback func(interface{}) bool) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
