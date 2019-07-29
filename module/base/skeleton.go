@@ -12,7 +12,6 @@ package base
 import (
 	"github.com/KylinHe/aliensboot-core/chanrpc"
 	"github.com/KylinHe/aliensboot-core/console"
-	"github.com/KylinHe/aliensboot-core/exception"
 	"github.com/KylinHe/aliensboot-core/pool"
 	"github.com/KylinHe/aliensboot-core/task"
 	"time"
@@ -111,9 +110,6 @@ func (s *Skeleton) Run(closeSig chan bool) {
 
 
 func (s *Skeleton) Tick() {
-	defer func() {
-		exception.CatchStackDetail()
-	}()
 	if s.tick != nil {
 		s.tick()
 	}

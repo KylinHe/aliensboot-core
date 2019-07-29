@@ -11,9 +11,7 @@ package util
 
 import (
 	"container/heap"
-	"fmt"
-	"os"
-	"runtime/debug"
+	"github.com/KylinHe/aliensboot-core/exception"
 	"time"
 )
 
@@ -182,9 +180,9 @@ func (manager *TimerManager) Tick() {
 		}
 		// unlock the lock to run callback, because callback may add more callbacks / timers
 		//timerHeapLock.Unlock()
-		callback(t.param)
-		//runCallback(callback, t.param)
-		//runCallback(callback, t.param)
+
+		//callback(t.param)
+		runCallback(callback, t.param)
 		//timerHeapLock.Lock()
 
 		if t.repeat {
@@ -215,10 +213,8 @@ func (manager *TimerManager) selfTickRoutine(tickInterval time.Duration) {
 
 func runCallback(callback CallbackFunc, param []interface{}) {
 	defer func() {
-		err := recover()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Callback %v paniced: %v\n", callback, err)
-			debug.PrintStack()
+		if err := recover(); err != nil {
+			exception.PrintStackDetail(err)
 		}
 	}()
 	callback(param)
