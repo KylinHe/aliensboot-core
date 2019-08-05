@@ -28,14 +28,17 @@ const (
 type handler func(request *base.Any) *base.Any
 
 func NewRpcHandler(chanRpc *chanrpc.Server, handler handler) *rpcServer {
-	if chanRpc == nil {
-		log.Fatalf("chanRpc can not be nil")
-	}
+	//if chanRpc == nil {
+	//	log.Fatalf("chanRpc can not be nil")
+	//}
 	service := &rpcServer{}
 	service.chanRpc = chanRpc
 	service.handler = handler
-	service.chanRpc.Register(commandRequest, service.request)
-	service.chanRpc.Register(commandReceive, service.receive)
+
+	if chanRpc != nil {
+		chanRpc.Register(commandRequest, service.request)
+		chanRpc.Register(commandReceive, service.receive)
+	}
 	return service
 }
 
@@ -92,7 +95,16 @@ func (this *rpcServer) LocalRequest(request *base.Any) (*base.Any, error) {
 
 
 func (this *rpcServer) Request(request *base.Any, server base.RPCService_RequestServer) error {
-	return this.chanRpc.Call0(commandRequest, request, server)
+	if this.chanRpc != nil {
+		return this.chanRpc.Call0(commandRequest, request, server)
+	} else {
+		response := this.handler(request)
+		if response != nil {
+			response.Id = request.Id
+			return server.Send(response)
+		}
+		return nil
+	}
 }
 
 func (this *rpcServer) Receive(server base.RPCService_ReceiveServer) error {
@@ -106,7 +118,11 @@ func (this *rpcServer) Receive(server base.RPCService_ReceiveServer) error {
 			//log.Debugf("accept async message error : %v", err)
 			return err
 		}
-		this.chanRpc.Go(commandReceive, request)
+		if this.chanRpc != nil {
+			this.chanRpc.Go(commandReceive, request)
+		} else {
+			this.handler(request)
+		}
 	}
 	return nil
 }
