@@ -4,10 +4,8 @@ import (
 	"github.com/KylinHe/aliensboot-core/aliensboot"
 	"github.com/KylinHe/aliensboot-core/database"
 	"github.com/KylinHe/aliensboot-core/log"
-	"github.com/KylinHe/aliensboot-core/module/database/conf"
 	"github.com/KylinHe/aliensboot-core/module/database/constant"
 	"reflect"
-	"time"
 )
 
 func init() {
@@ -22,55 +20,45 @@ func init() {
 
 func handleDelete(args []interface{}) {
 	handler := args[1].(database.IDatabaseHandler)
-	starTime := time.Now()
 	err := handler.DeleteOne(args[0])
-	debugLog("delete", args[0], starTime, err)
+	debugLog("delete", args[0], err)
 }
 
 func handleInsert(args []interface{}) {
 	handler := args[1].(database.IDatabaseHandler)
-	starTime := time.Now()
 	err := handler.Insert(args[0])
-	debugLog("insert", args[0], starTime, err)
+	debugLog("insert", args[0], err)
 }
 
 func handleUpdate(args []interface{}) {
 	handler := args[1].(database.IDatabaseHandler)
-	starTime := time.Now()
 	err := handler.UpdateOne(args[0])
-	debugLog("update", args[0], starTime, err)
+	debugLog("update", args[0], err)
 }
 
 func forceUpdate(args []interface{}) {
 	handler := args[1].(database.IDatabaseHandler)
-	starTime := time.Now()
 	err := handler.ForceUpdateOne(args[0])
-	debugLog("force update", args[0], starTime, err)
+	debugLog("force update", args[0], err)
 }
 
 func conditionUpdate(args []interface{}) {
 	handler := args[3].(database.IDatabaseHandler)
-	starTime := time.Now()
 	err := handler.Update(args[0].(string), args[1], args[2])
-	debugLog("condition update", args[0], starTime, err)
+	debugLog("condition update", args[0], err)
 }
 
 func conditionDelete(args []interface{}) {
 	handler := args[2].(database.IDatabaseHandler)
-	starTime := time.Now()
 	err := handler.DeleteOneCondition(args[0], args[1])
-	debugLog("condition delete", args[0], starTime, err)
+	debugLog("condition delete", args[0], err)
 }
 
-func debugLog(opt string, data interface{}, startTime time.Time, err error) {
+func debugLog(opt string, data interface{}, err error) {
 	if aliensboot.IsDebug() {
 		typeName := reflect.TypeOf(data).Name()
 		if err != nil {
 			log.Debugf("[%v] %v err: %v", opt, typeName, err)
-		}
-		duration := time.Now().Sub(startTime)
-		if duration.Seconds() >= conf.DBTimeoutThreshold {
-			log.Debugf("[%v] %v too long %v", opt, typeName, duration.Seconds())
 		}
 	}
 }
