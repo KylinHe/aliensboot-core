@@ -9,6 +9,10 @@
  *******************************************************************************/
 package redis
 
+type Command struct {
+	Args []interface{}
+}
+
 //操作类型
 const (
 	PARAM_WITHSCORES string = "WITHSCORES"
@@ -17,6 +21,10 @@ const (
 	PARAM_Z_MIN      string = "-inf"
 
 	OP_SELECT string = "SELECT"
+	OP_PING string = "PING"
+	OP_AUTH string = "AUTH"
+	OP_MULTI string = "MULTI"
+	OP_EXEC string = "EXEC"
 
 	OP_S_ADD        string = "SADD"
 	OP_S_RANDMENBER string = "SRANDMEMBER"

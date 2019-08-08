@@ -94,9 +94,20 @@ func (this *RedisCacheClient) OSetFieldsByID(data interface{}, id interface{}, f
 //提取结构体的注解，写入redis
 //data 对象
 func (this *RedisCacheClient) OSetByID(data interface{}, id interface{}) error {
+	key, hash, err := this.OGet(data, id)
+	if err != nil {
+		return err
+	}
+	return this.HMSet(key, hash)
+}
+
+
+//提取结构体的注解，写入redis
+//data 对象
+func (this *RedisCacheClient) OGet(data interface{}, id interface{}) (key string, hash map[interface{}]interface{}, err error) {
 	dataValue := reflect.ValueOf(data).Elem()
 	dataType := reflect.TypeOf(data).Elem()
-	hash := make(map[interface{}]interface{})
+	hash = make(map[interface{}]interface{})
 	for i := 0; i < dataValue.NumField(); i++ {
 		field := dataValue.Field(i)
 		fieldType := dataType.Field(i)
@@ -107,21 +118,23 @@ func (this *RedisCacheClient) OSetByID(data interface{}, id interface{}) error {
 		if tag == "" {
 			tag = fieldType.Name
 		}
-		fieldValue, err := util.GetReflectValue(field)
-
-		if err != nil {
-			return errors.New(fmt.Sprintf("[rorm] get field %v-%v:%v err", dataType.Name(), tag, field))
+		fieldValue, err1 := util.GetReflectValue(field)
+		if err1 != nil {
+			err = errors.New(fmt.Sprintf("[rorm] get field %v-%v:%v err", dataType.Name(), tag, field))
+			return
 		}
 		hash[tag] = fieldValue
 	}
 
 	if len(hash) > 0 {
-		key := newHashKey(data, id)
-		return this.HMSet(key, hash)
-	} else {
-		return errors.New(fmt.Sprintf("[rorm] can not found any field on %v", dataType.Name()))
+		key = newHashKey(data, id)
 	}
+	//else {
+	//	err = errors.New(fmt.Sprintf("[rorm] can not found any field on %v", dataType.Name()))
+	//}
+	return
 }
+
 
 //获取redis数据，注入结构体
 func (this *RedisCacheClient) OGetByID(data interface{}, id interface{}) error {

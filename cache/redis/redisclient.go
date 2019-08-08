@@ -31,6 +31,7 @@ type RedisCacheClient struct {
 	errorHandler ErrorHandler
 }
 
+
 //redis.pool.maxActive=200  #最大连接数：能够同时建立的“最大链接个数”
 
 //redis.pool.maxIdle=20     #最大空闲数：空闲链接数大于maxIdle时，将进行回收
@@ -77,13 +78,10 @@ func (this *RedisCacheClient) Start() {
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.Dial("tcp", this.Address)
 			if err != nil {
-				//log.Fatalf("start redis error : %v", err)
 				return nil, err
 			}
 			if this.Password != "" {
-				if _, err := c.Do("AUTH", this.Password); err != nil {
-					//c.Close()
-					//log.Fatalf("start redis error : %v", err)
+				if _, err := c.Do(OP_AUTH, this.Password); err != nil {
 					return nil, err
 				}
 			}
@@ -91,7 +89,7 @@ func (this *RedisCacheClient) Start() {
 		},
 	}
 	//测试连接
-	err := this.SetData("____test____", "testdata")
+	_, err := this.Do(OP_PING)
 	if err != nil {
 		log.Fatalf("test redis connection error : %v", err)
 	}
@@ -107,6 +105,52 @@ func (this *RedisCacheClient) Close() error {
 
 func (this *RedisCacheClient) SetErrorHandler(handler ErrorHandler)  {
 	this.errorHandler = handler
+}
+
+
+// 管道执行命令
+func (this *RedisCacheClient) PipelineCommands(commands []Command) error {
+	conn := this.pool.Get()
+	defer conn.Close()
+	for _, cmd := range commands {
+		if len(cmd.Args) == 0 {
+			continue
+		}
+		if err := conn.Send(cmd.Args[0].(string), cmd.Args[1:]...); err != nil {
+			this.errorHandler(err, cmd.Args[0].(string), cmd.Args[1:]...)
+			return err
+		}
+	}
+	if err := conn.Flush(); err != nil {
+		this.errorHandler(err, "Flush")
+		return err
+	}
+	return nil
+}
+
+// 事务执行命令
+func (this *RedisCacheClient) MultiCommands(commands []Command) error {
+	conn := this.pool.Get()
+	defer conn.Close()
+	err := conn.Send(OP_MULTI)
+	if err != nil {
+		this.errorHandler(err, OP_MULTI)
+		return err
+	}
+	for _, cmd := range commands {
+		if len(cmd.Args) == 0 {
+			continue
+		}
+		if err := conn.Send(cmd.Args[0].(string), cmd.Args[1:]...); err != nil {
+			this.errorHandler(err, cmd.Args[0].(string), cmd.Args[1:]...)
+			return err
+		}
+	}
+	err = conn.Send(OP_EXEC)
+	if err != nil {
+		this.errorHandler(err, OP_EXEC)
+	}
+	return err
 }
 
 func (this *RedisCacheClient) Do(command string, args ...interface{}) (reply interface{}, err error) {

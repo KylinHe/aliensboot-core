@@ -51,7 +51,7 @@ func startService(config config.ServiceConfig, handler interface{}) service.ISer
 	rpcPort := os.Getenv("ServicePort")
 	if rpcPort != "" {
 		newPort, err := strconv.Atoi(rpcPort)
-		if err != nil {
+		if err == nil {
 			config.Port	= newPort
 		}
 	}

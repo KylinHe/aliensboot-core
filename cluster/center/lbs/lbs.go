@@ -20,7 +20,7 @@ func GetLBS(lbs string) Strategy {
 	if lbs == StrategyPolling {
 		return NewPollingLBS()
 	} else if lbs == StrategyHashring {
-		return NewHashRing(400)
+		return NewHashRing(DefaultVirtualSpots)
 	} else {
 		return NewPollingLBS()
 	}
