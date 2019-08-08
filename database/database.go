@@ -17,6 +17,10 @@ type IDatabaseFactory interface {
 	create() IDatabase
 }
 
+type IData interface {
+	Copy() interface{} //支持拷贝
+}
+
 type Authority struct {
 	Username string
 	Password string

@@ -28,11 +28,15 @@ const (
 )
 
 func NewSkeleton() *Skeleton {
+	return NewSkeleton1(ChanRPCLen)
+}
+
+func NewSkeleton1(chanLen int) *Skeleton {
 	skeleton := &Skeleton{
 		GoLen:              GoLen,
 		TimerDispatcherLen: TimerDispatcherLen,
 		AsynCallLen:        AsynCallLen,
-		ChanRPCServer:      chanrpc.NewServer(ChanRPCLen),
+		ChanRPCServer:      chanrpc.NewServer(chanLen),
 		ticker:             time.Tick(TickInterval),
 	}
 	skeleton.Init()

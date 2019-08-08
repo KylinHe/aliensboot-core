@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	skeleton = base.NewSkeleton()
+	skeleton = base.NewSkeleton1(100000)
 	ChanRPC  = skeleton.ChanRPCServer
 )
 

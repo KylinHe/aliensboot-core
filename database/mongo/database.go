@@ -94,6 +94,11 @@ func (this *Database) Update(collection string, selector interface{}, update int
 	return s.DB(this.dbName).C(collection).Update(selector, update)
 }
 
+
+func (this *Database) NextSeq(tableMeta *dbconfig.TableMeta) (int64, error) {
+	return this.dbContext.NextSeq(this.dbName, IdStore, tableMeta.Name)
+}
+
 func (this *Database) Ref(data interface{}, handler func(meta *dbconfig.TableMeta, db *mgo.Collection) error) error {
 	tableMeta, err := this.GetTableMeta(data)
 	if err != nil {
@@ -111,6 +116,16 @@ func (this *Database) Ref(data interface{}, handler func(meta *dbconfig.TableMet
 	}
 	return err
 }
+
+//func (this *Database) RefSession(handler func(database *mgo.Database) error) error {
+//	s := this.dbContext.Ref()
+//	defer this.dbContext.UnRef(s)
+//	err := handler(s.DB(this.dbName))
+//	if err != nil && this.errorHandler != nil {
+//		this.errorHandler(err)
+//	}
+//	return err
+//}
 
 func (this *Database) BoolRef(data interface{}, handler func(meta *dbconfig.TableMeta, db *mgo.Collection) (bool, error)) (bool, error) {
 	tableMeta, err := this.GetTableMeta(data)

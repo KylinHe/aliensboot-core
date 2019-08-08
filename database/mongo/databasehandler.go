@@ -147,7 +147,7 @@ func (this *Database) EnsureIndex(name string, key []string, unique bool) error 
 func (this *Database) Insert(data interface{}) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		if tableMeta.AutoIncrement {
-			newId, err1 := this.dbContext.NextSeq(this.dbName, IdStore, tableMeta.Name)
+			newId, err1 := this.NextSeq(tableMeta)
 			if err1 != nil {
 				return err1
 			}
@@ -165,7 +165,7 @@ func (this *Database) InsertMulti(datas []interface{}) error {
 	data := datas[0]
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		if tableMeta.AutoIncrement {
-			newId, err1 := this.dbContext.NextSeq(this.dbName, IdStore, tableMeta.Name)
+			newId, err1 := this.NextSeq(tableMeta)
 			if err1 != nil {
 				return err1
 			}
@@ -174,9 +174,6 @@ func (this *Database) InsertMulti(datas []interface{}) error {
 		return collection.Insert(datas...)
 	})
 }
-
-
-
 
 func (this *Database) QueryAllLimit(data interface{}, result interface{}, limit int, callback func(interface{}) bool) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
