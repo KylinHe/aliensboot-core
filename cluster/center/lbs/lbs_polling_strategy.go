@@ -92,7 +92,7 @@ func (this *PollingLBS) GetNode(key string) string {
 	}
 	this.currNode.index++
 	//超过权重 取下个节点
-	if this.currNode.index > this.currNode.weight {
+	if this.currNode.index >= this.currNode.weight {
 		this.nextNode()
 	}
 	return this.currNode.name
