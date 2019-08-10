@@ -154,7 +154,7 @@ func (this *ConsulServiceCenter) DiscoverService(healthyOnly bool, serviceName s
 			//	continue
 			//}
 
-			iService := service.NewService1(serviceEntry.ID, serviceEntry.Service, serviceEntry.Address, serviceEntry.Port, service.GRPC)
+			iService, _ := service.NewService1(serviceEntry.ID, serviceEntry.Service, serviceEntry.Address, serviceEntry.Port, service.GRPC)
 			services = append(services, iService)
 			//node := newService1(health.ServiceID, serviceName, entry.Service.Address, entry.Service.Port, GRPC)
 			////get data from kv store

@@ -125,7 +125,7 @@ func (this *ZKServiceCenter) SubscribeService(serviceName string) {
 			log.Errorf("unmarshal service %v data error: %v", servicePath, err1)
 			continue
 		}
-		service := service.NewService2(centerService, serviceID, serviceName)
+		service, _ := service.NewService2(centerService, serviceID, serviceName)
 		services = append(services, service)
 	}
 

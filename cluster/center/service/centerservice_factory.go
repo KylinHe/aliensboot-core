@@ -9,13 +9,21 @@
  *******************************************************************************/
 package service
 
-import "github.com/KylinHe/aliensboot-core/config"
+import (
+	"errors"
+	"github.com/KylinHe/aliensboot-core/cluster/center/lbs"
+	"github.com/KylinHe/aliensboot-core/config"
+)
 
-func NewService(config config.ServiceConfig) IService {
+
+func NewService(config config.ServiceConfig) (IService, error) {
+	if !lbs.ValidateLBS(config.Lbs) {
+		return nil, errors.New("unexpect lbs option " + config.Lbs)
+	}
 	return NewService1(config.ID, config.Name, config.Address, config.Port, config.Protocol)
 }
 
-func NewService2(centerService *CenterService, id string, name string) IService {
+func NewService2(centerService *CenterService, id string, name string) (IService, error) {
 	centerService.SetID(id)
 	centerService.SetName(name)
 	var service IService = nil
@@ -33,10 +41,10 @@ func NewService2(centerService *CenterService, id string, name string) IService 
 
 	}
 
-	return service
+	return service, nil
 }
 
-func NewService1(id string, name string, address string, port int, protocol string) IService {
+func NewService1(id string, name string, address string, port int, protocol string) (IService, error) {
 	centerService := &CenterService{
 		Address:  address,
 		Port:     port,

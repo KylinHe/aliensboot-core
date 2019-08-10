@@ -12,18 +12,22 @@
 package lbs
 
 const (
-	StrategyPolling  string = "polling"  //轮询
-	StrategyHashring string = "hashring" //一致性hash
+	StrategyPolling  string = "Polling"  //轮询
+	StrategyHashRing string = "HashRing" //一致性hash
 )
 
 func GetLBS(lbs string) Strategy {
 	if lbs == StrategyPolling {
 		return NewPollingLBS()
-	} else if lbs == StrategyHashring {
+	} else if lbs == StrategyHashRing {
 		return NewHashRing(DefaultVirtualSpots)
 	} else {
 		return NewPollingLBS()
 	}
+}
+
+func ValidateLBS(lbs string) bool {
+	return lbs == StrategyPolling || lbs == StrategyHashRing || lbs == ""
 }
 
 type Strategy interface {

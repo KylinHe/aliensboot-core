@@ -19,6 +19,7 @@ func NewServiceCategory(category string, lbsStr string) *serviceCategory {
 	result := &serviceCategory{
 		category: category,
 		services: make(map[string]IService),
+		lbsName: lbs.StrategyPolling,
 		//nodes:    []string{},
 		//listeners: []Listener{},
 		//seqs:     seqMaps,
@@ -30,6 +31,7 @@ func NewServiceCategory(category string, lbsStr string) *serviceCategory {
 type serviceCategory struct {
 	category string
 	lbs      lbs.Strategy        //负载均衡策略
+	lbsName  string
 	services map[string]IService //服务节点名,和服务句柄
 	//nodes    []string
 
@@ -41,7 +43,8 @@ func (this *serviceCategory) setLbs(lbsStr string) {
 	newLbs := lbs.GetLBS(lbsStr)
 	if this.lbs == nil || reflect.TypeOf(this.lbs) != reflect.TypeOf(newLbs) {
 		this.lbs = newLbs
-		//log.Debugf("set lbs %v - %v", this.category, lbsStr)
+		this.lbsName = lbsStr
+		log.Debugf("[lbs-%v] init %v", this.lbsName, this.category)
 		for serviceId, _ := range this.services {
 			this.handleAddNode(serviceId)
 		}
@@ -157,18 +160,12 @@ func (this *serviceCategory) removeService(serviceID string) {
 
 func (this *serviceCategory) handleRemoveNode(serviceID string) {
 	this.lbs.RemoveNode(serviceID)
-	log.Debugf("[lbs] remove node %v-%v", this.category, serviceID)
-	//for _, listener := range this.listeners {
-	//	listener.RemoveNode(serviceID)
-	//}
+	log.Debugf("[lbs-%v] remove node %v-%v", this.lbsName, this.category, serviceID)
 }
 
 func (this *serviceCategory) handleAddNode(serviceID string) {
 	this.lbs.AddNode(serviceID, 1)
-	log.Debugf("[lbs] add node %v-%v", this.category, serviceID)
-	//for _, listener := range this.listeners {
-	//	listener.AddNode(service.GetID())
-	//}
+	log.Debugf("[lbs-%v] add node %v-%v", this.lbsName, this.category, serviceID)
 }
 
 //func (this *serviceCategory) getNodes() []string {

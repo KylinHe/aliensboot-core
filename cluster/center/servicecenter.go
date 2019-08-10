@@ -60,9 +60,9 @@ func startService(config config.ServiceConfig, handler interface{}) service.ISer
 	if config.Address == "" {
 		config.Address = util.GetIP()
 	}
-	service := service.NewService(config)
-	if service == nil {
-		log.Fatalf("un expect service protocol %v", config.Protocol)
+	service, err := service.NewService(config)
+	if err != nil {
+		log.Fatalf("create service err : %v", err)
 	}
 	service.SetHandler(handler)
 	if !service.Start() {

@@ -279,7 +279,7 @@ func (this *ETCDServiceCenter) handleService(eventType mvccpb.Event_EventType, v
 			log.Errorf("unmarshal service %v data error: %v", servicePath, err1)
 			return
 		}
-		service := service.NewService2(centerService, serviceID, serviceName)
+		service, _ := service.NewService2(centerService, serviceID, serviceName)
 		this.Container.UpdateService(service, false)
 	} else if eventType == clientv3.EventTypeDelete {
 		this.Container.RemoveService(serviceName, serviceID)
