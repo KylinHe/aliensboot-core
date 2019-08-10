@@ -86,24 +86,30 @@ func ReleaseService(service service.IService) {
 type ConfigListener func(data []byte)
 
 type ServiceCenter interface {
+
 	GetNodeID() string //获取当前节点id
 
 	ConnectCluster(config config.ClusterConfig)
 
+	Close()
+
+	IsConnect() bool
+
 	PublicConfig(configName string, content []byte) bool        //发布配置
+
 	SubscribeConfig(configName string, listener ConfigListener) //订阅配置
 
 	ReleaseService(service service.IService)                  //释放服务
+
 	PublicService(service service.IService, serviceConfig config.ServiceConfig) bool //发布服务
 
-	SubscribeServices(serviceNames ...string)            //订阅服务
+	SubscribeServices(serviceName ...string)  //订阅服务
+
 	GetAllService(serviceName string) []service.IService //获取所有的服务
 
 	GetService(serviceName string, serviceID string) service.IService //获取指定服务
+
 	AllocService(serviceName string, param string) service.IService   //按照负载均衡策略 分配一个可用的服务
 
-	//AddServiceListener(listener service.Listener)
 
-	IsConnect() bool
-	Close()
 }

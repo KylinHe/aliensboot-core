@@ -12,13 +12,14 @@ package service
 import (
 	"github.com/KylinHe/aliensboot-core/cluster/center/lbs"
 	"github.com/KylinHe/aliensboot-core/log"
+	"reflect"
 )
 
 func NewServiceCategory(category string, lbsStr string) *serviceCategory {
 	result := &serviceCategory{
 		category: category,
 		services: make(map[string]IService),
-		nodes:    []string{},
+		//nodes:    []string{},
 		//listeners: []Listener{},
 		//seqs:     seqMaps,
 	}
@@ -30,15 +31,23 @@ type serviceCategory struct {
 	category string
 	lbs      lbs.Strategy        //负载均衡策略
 	services map[string]IService //服务节点名,和服务句柄
-	nodes    []string
+	//nodes    []string
 
 	//listeners []Listener
 	//seqs     map[int32]struct{} //能够处理的消息编号
 }
 
 func (this *serviceCategory) setLbs(lbsStr string) {
+	newLbs := lbs.GetLBS(lbsStr)
+	if this.lbs == nil || reflect.TypeOf(this.lbs) != reflect.TypeOf(newLbs) {
+		this.lbs = newLbs
+		//log.Debugf("set lbs %v - %v", this.category, lbsStr)
+		for serviceId, _ := range this.services {
+			this.handleAddNode(serviceId)
+		}
+	}
 	//更新负载均衡策略
-	this.lbs = lbs.GetLBS(lbsStr)
+
 	//log.Debugf("update lbs strategy %v - %v", this.category, lbsStr)
 }
 
@@ -162,9 +171,9 @@ func (this *serviceCategory) handleAddNode(serviceID string) {
 	//}
 }
 
-func (this *serviceCategory) getNodes() []string {
-	return this.nodes
-}
+//func (this *serviceCategory) getNodes() []string {
+//	return this.nodes
+//}
 
 func (this *serviceCategory) getAllService() []IService {
 	results := []IService{}

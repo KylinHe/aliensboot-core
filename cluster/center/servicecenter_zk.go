@@ -101,9 +101,9 @@ func (this *ZKServiceCenter) ReleaseService(service service.IService) {
 }
 
 func (this *ZKServiceCenter) SubscribeService(serviceName string) {
-	this.SubscribeConfig("lbs"+NodeSplit+serviceName, func(data []byte) {
-		this.Container.SetLbs(serviceName, string(data))
-	})
+	//this.SubscribeConfig("lbs"+NodeSplit+serviceName, func(data []byte) {
+	//	this.Container.SetLbs(serviceName, string(data))
+	//})
 	path := this.serviceRoot + NodeSplit + serviceName
 	//desc := this.confirmContentNode(path)
 	serviceIDs, _, ch, err := this.zkCon.ChildrenW(path)

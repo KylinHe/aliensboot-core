@@ -132,9 +132,9 @@ func (this *GRPCService) Close() {
 //向服务请求消息
 func (this *GRPCService) Request(request *base.Any) (*base.Any, error) {
 	//本地启动的服务直接调用，不需要经过grpc中转
-	if this.IsLocal() {
-		return this.server.LocalRequest(request)
-	}
+	//if this.IsLocal() {
+	//	return this.server.LocalRequest(request)
+	//}
 	if this.requestClient == nil {
 		return nil, errors.New("service is not initial")
 	}
@@ -159,10 +159,11 @@ func (this *GRPCService) Request(request *base.Any) (*base.Any, error) {
 //让服务接收消息，不需要响应
 func (this *GRPCService) Send(request *base.Any) error {
 	//服务为本机，直接处理
-	if this.IsLocal() {
-		this.server.LocalRequest(request)
-		return nil
-	}
+	
+	//if this.IsLocal() {
+	//	this.server.LocalRequest(request)
+	//	return nil
+	//}
 
 	if this.receiveClient == nil {
 		return errors.New("service is not initial")

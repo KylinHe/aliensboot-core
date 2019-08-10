@@ -35,7 +35,7 @@ type IService interface {
 	Close()        //关闭服务
 
 	Equals(other IService) bool //比较服务
-	IsLocal() bool              //是否本机服务
+	IsLocal() bool   //是否本机服务
 
 	Request(request *base.Any) (*base.Any, error) //同步请求 阻塞
 	//AsyncRequest(asyncCall *AsyncCall) //异步请求，响应采用回调

@@ -118,7 +118,7 @@ func (this *ETCDServiceCenter) PublicService(service service.IService, config co
 		return false
 	}
 
-	serviceRootPath := this.serviceRoot + NodeSplit + service.GetName()
+	serviceRootPath := this.GetServiceRootPath(service.GetName())
 	servicePath := serviceRootPath + NodeSplit + service.GetID()
 
 	rsp, err := this.client.Get(newTimeoutContext(), serviceRootPath, clientv3.WithPrefix())
@@ -140,6 +140,12 @@ func (this *ETCDServiceCenter) PublicService(service service.IService, config co
 		}
 	}
 
+	_, err = this.client.Put(newTimeoutContext(), serviceRootPath, config.Lbs)
+	if err != nil {
+		log.Errorf("public service config %v  err : %v", serviceRootPath, err)
+		return false
+	}
+
 	_, ok := this.ttlCheck.Load(servicePath)
 	//this.RLock()
 	//ttlData := this.ttlCheck[servicePath]
@@ -159,9 +165,9 @@ func (this *ETCDServiceCenter) PublicService(service service.IService, config co
 	}
 
 	//允许本地调用 需要注册在服务容器中
-	if config.Local && !this.UpdateService(service, false) {
-		return false
-	}
+	//if config.Local && !this.UpdateService(service, false) {
+	//	return false
+	//}
 
 	resp, _ := this.client.Grant(context.TODO(), this.ttl)
 	serviceData := string(data)
@@ -222,14 +228,18 @@ func (this *ETCDServiceCenter) SubscribeServices(serviceNames ...string) {
 	}
 }
 
-func (this *ETCDServiceCenter) SetLbs(serviceName string, lbs string) {
-	this.Container.SetLbs(serviceName, lbs)
+//func (this *ETCDServiceCenter) SetLbs(serviceName string, lbs string) {
+//	this.Container.SetLbs(serviceName, lbs)
+//}
+
+func (this *ETCDServiceCenter) GetServiceRootPath(service string) string {
+	return this.serviceRoot + NodeSplit + service
 }
 
 func (this *ETCDServiceCenter) SubscribeService(healthyOnly bool, serviceName string) {
-	//this.SubscribeConfig("lbs"+NODE_SPLIT+serviceName, func(data []byte) {
-	//	this.Container.SetLbs(serviceName, string(data))
-	//})
+	this.SubscribeData(this.GetServiceRootPath(serviceName), func(data []byte) {
+		this.Container.SetLbs(serviceName, string(data))
+	}, false)
 
 	serviceRootPath := this.serviceRoot + NodeSplit + serviceName + NodeSplit
 	prefixLen := len(serviceRootPath)
@@ -262,7 +272,6 @@ func (this *ETCDServiceCenter) handleService(eventType mvccpb.Event_EventType, v
 	servicePath := string(v.Key)
 	data := v.Value
 	serviceID := servicePath[prefixLen:]
-
 	if eventType == clientv3.EventTypePut {
 		centerService := &service.CenterService{}
 		err1 := json.Unmarshal(data, centerService)
@@ -280,24 +289,30 @@ func (this *ETCDServiceCenter) handleService(eventType mvccpb.Event_EventType, v
 
 func (this *ETCDServiceCenter) SubscribeConfig(configName string, configHandler ConfigListener) {
 	configPath := this.configRoot + NodeSplit + configName
-	rsp, err := this.client.Get(newTimeoutContext(), configPath)
+	this.SubscribeData(configPath, configHandler, true)
+}
+
+func (this *ETCDServiceCenter) SubscribeData(path string, configHandler ConfigListener, ensure bool) {
+	rsp, err := this.client.Get(newTimeoutContext(), path)
 	if err != nil || rsp.Kvs == nil{
-		log.Fatalf("subscribe config %v error: %v", configPath, err)
-		return
-	}
-	for _, v := range rsp.Kvs {
-		configHandler(v.Value)
+		if ensure {
+			log.Fatalf("subscribe config %v error: %v", path, err)
+		}
+	} else {
+		for _, v := range rsp.Kvs {
+			configHandler(v.Value)
+		}
 	}
 
 	go func() {
-		ch := this.client.Watch(context.TODO(), configPath)
+		ch := this.client.Watch(context.TODO(), path)
 		for {
 			//只要消息管道没有关闭，就一直等待用户请求
 			event, _ := <-ch
 			for _, serviceEvent := range event.Events {
 				if serviceEvent.Type == clientv3.EventTypePut {
 					if serviceEvent.Kv.Value == nil || len(serviceEvent.Kv.Value) == 0 {
-						log.Errorf("invalid config %v", configPath)
+						log.Errorf("invalid config %v", path)
 					} else {
 						configHandler(serviceEvent.Kv.Value)
 					}
@@ -305,8 +320,8 @@ func (this *ETCDServiceCenter) SubscribeConfig(configName string, configHandler 
 			}
 		}
 	}()
-
 }
+
 
 func (this *ETCDServiceCenter) PublicConfig(configType string, configContent []byte) bool {
 	if configType == "" {
