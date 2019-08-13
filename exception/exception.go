@@ -26,11 +26,11 @@ func GameException1(data interface{}, err error) {
 	panic(data)
 }
 
-func CatchStackDetail() {
-	if err := recover(); err != nil {
-		PrintStackDetail(err)
-	}
-}
+//func CatchStackDetail() {
+//	if err := recover(); err != nil {
+//		PrintStackDetail(err)
+//	}
+//}
 
 func PrintStackDetail(err interface{}) {
 	if config.LenStackBuf > 0 {

@@ -1,8 +1,6 @@
 package message
 
-import "errors"
-
-var invalidServiceError error = errors.New("invalid service")
+//var invalidServiceError = errors.New("invalid service")
 
 //消息服务抽象层，可以为local也可以是remote
 type IMessageService interface {

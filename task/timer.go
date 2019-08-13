@@ -30,7 +30,9 @@ func (t *Timer) Stop() {
 func (t *Timer) Cb() {
 	defer func() {
 		t.cb = nil
-		exception.CatchStackDetail()
+		if err := recover(); err != nil {
+			exception.PrintStackDetail(err)
+		}
 	}()
 
 	if t.cb != nil {

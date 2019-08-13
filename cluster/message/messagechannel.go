@@ -38,7 +38,9 @@ func (this *MessageChannel) Open() {
 	this.channel = make(chan interface{}, this.messageLimit)
 	go func() {
 		defer func() {
-			exception.CatchStackDetail()
+			if err := recover(); err != nil {
+				exception.PrintStackDetail(err)
+			}
 		}()
 		for {
 			//只要消息管道没有关闭，就一直等待用户请求

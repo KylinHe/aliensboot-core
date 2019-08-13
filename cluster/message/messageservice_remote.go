@@ -10,6 +10,7 @@
 package message
 
 import (
+	"errors"
 	"github.com/KylinHe/aliensboot-core/cluster/center"
 	"github.com/KylinHe/aliensboot-core/cluster/center/service"
 	"github.com/KylinHe/aliensboot-core/protocol/base"
@@ -36,7 +37,7 @@ func (this *RemoteService) Init() {
 func (this *RemoteService) Request(request *base.Any, param string) (*base.Any, error) {
 	service := center.ClusterCenter.AllocService(this.serviceType, param)
 	if service == nil {
-		return nil, invalidServiceError
+		return nil, errors.New("invalid service:" + this.serviceType)
 	}
 	return service.Request(request)
 }
@@ -45,7 +46,7 @@ func (this *RemoteService) Request(request *base.Any, param string) (*base.Any, 
 func (this *RemoteService) RequestNode(serviceID string, request *base.Any) (*base.Any, error) {
 	service := center.ClusterCenter.GetService(this.serviceType, serviceID)
 	if service == nil {
-		return nil, invalidServiceError
+		return nil, errors.New("invalid service:" + this.serviceType)
 	}
 	return service.Request(request)
 }
@@ -54,7 +55,7 @@ func (this *RemoteService) RequestNode(serviceID string, request *base.Any) (*ba
 func (this *RemoteService) AsyncRequest(param string, asyncCall *service.AsyncCall) error {
 	service := center.ClusterCenter.AllocService(this.serviceType, param)
 	if service == nil {
-		return invalidServiceError
+		return errors.New("invalid service:" + this.serviceType)
 	}
 	asyncCall.Invoke(service)
 	//service.AsyncRequest(request, callback)
@@ -65,7 +66,7 @@ func (this *RemoteService) AsyncRequest(param string, asyncCall *service.AsyncCa
 func (this *RemoteService) AsyncRequestNode(serviceID string, asyncCall *service.AsyncCall) error {
 	service := center.ClusterCenter.GetService(this.serviceType, serviceID)
 	if service == nil {
-		return invalidServiceError
+		return errors.New("invalid service:" + this.serviceType)
 	}
 	asyncCall.Invoke(service)
 	//service.AsyncRequest(request, callback)
@@ -87,7 +88,7 @@ func (this *RemoteService) AsyncRequestNode(serviceID string, asyncCall *service
 func (this *RemoteService) Send(request *base.Any, param string) error {
 	service := center.ClusterCenter.AllocService(this.serviceType, "")
 	if service == nil {
-		return invalidServiceError
+		return errors.New("invalid service:" + this.serviceType)
 	}
 	return service.Send(request)
 }
@@ -96,7 +97,7 @@ func (this *RemoteService) Send(request *base.Any, param string) error {
 func (this *RemoteService) SendNode(serviceID string, request *base.Any) error {
 	service := center.ClusterCenter.GetService(this.serviceType, serviceID)
 	if service == nil {
-		return invalidServiceError
+		return errors.New("invalid service:" + this.serviceType)
 	}
 	return service.Send(request)
 }
@@ -108,7 +109,7 @@ func (this *RemoteService) BroadcastAll(message *base.Any) {
 		return
 	}
 	for _, service := range services {
-		service.Send(message)
+		_ = service.Send(message)
 	}
 	return
 }

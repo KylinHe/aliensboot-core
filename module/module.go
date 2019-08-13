@@ -65,7 +65,9 @@ func run(m *module) {
 
 func destroy(m *module) {
 	defer func() {
-		exception.CatchStackDetail()
+		if err := recover(); err != nil {
+			exception.PrintStackDetail(err)
+		}
 	}()
 	m.mi.OnDestroy()
 }

@@ -344,7 +344,9 @@ func (c *Client) AsynCall(id interface{}, _args ...interface{}) {
 
 func execCb(ri *RetInfo) {
 	defer func() {
-		exception.CatchStackDetail()
+		if err := recover(); err != nil {
+			exception.PrintStackDetail(err)
+		}
 	}()
 
 	// execute

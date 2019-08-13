@@ -190,7 +190,9 @@ func (this *ETCDServiceCenter) openTTLCheck(path string, data string) {
 	ticker := time.NewTicker(time.Second * time.Duration(this.ttl/2))
 	this.ttlCheck.Store(path, ticker)
 	go func(){
-		exception.CatchStackDetail()
+		if err := recover(); err != nil {
+			exception.PrintStackDetail(err)
+		}
 		for {
 			select {
 			case <-ticker.C:

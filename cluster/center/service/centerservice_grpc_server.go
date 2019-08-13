@@ -25,12 +25,10 @@ const (
 	commandReceive   = "receive"
 )
 
-type handler func(request *base.Any) *base.Any
+
+type handler func(ctx *Context)
 
 func NewRpcHandler(chanRpc *chanrpc.Server, handler handler) *rpcServer {
-	//if chanRpc == nil {
-	//	log.Fatalf("chanRpc can not be nil")
-	//}
 	service := &rpcServer{}
 	service.chanRpc = chanRpc
 	service.handler = handler
@@ -75,36 +73,29 @@ func (this *rpcServer) close() {
 }
 
 func (this *rpcServer) request(args []interface{}) {
-	request := args[0].(*base.Any)
-	server := args[1].(base.RPCService_RequestServer)
-	response := this.handler(request)
-	if response != nil {
-		response.Id = request.Id
-		_ = server.Send(response)
-	}
+	ctx := args[0].(*Context)
+	this.handler(ctx)
 }
 
 func (this *rpcServer) receive(args []interface{}) {
-	request := args[0].(*base.Any)
-	this.handler(request)
+	ctx := args[0].(*Context)
+	this.handler(ctx)
 }
 
-func (this *rpcServer) LocalRequest(request *base.Any) (*base.Any, error) {
-	return this.handler(request), nil
-}
+//func (this *rpcServer) LocalRequest(request *base.Any) (*base.Any, error) {
+//	return this.handler(request), nil
+//}
 
 
 func (this *rpcServer) Request(request *base.Any, server base.RPCService_RequestServer) error {
+	ctx := newContext(request, server)
 	if this.chanRpc != nil {
-		return this.chanRpc.Call0(commandRequest, request, server)
+		return this.chanRpc.Call0(commandRequest, ctx, request)
+		//this.chanRpc.Go(commandRequest, ctx)
 	} else {
-		response := this.handler(request)
-		if response != nil {
-			response.Id = request.Id
-			return server.Send(response)
-		}
-		return nil
+		this.handler(ctx)
 	}
+	return nil
 }
 
 func (this *rpcServer) Receive(server base.RPCService_ReceiveServer) error {
@@ -115,13 +106,13 @@ func (this *rpcServer) Receive(server base.RPCService_ReceiveServer) error {
 		}
 		request, err := server.Recv()
 		if err != nil {
-			//log.Debugf("accept async message error : %v", err)
 			return err
 		}
+		ctx := newContext(request, nil)
 		if this.chanRpc != nil {
-			this.chanRpc.Go(commandReceive, request)
+			this.chanRpc.Go(commandReceive, ctx)
 		} else {
-			this.handler(request)
+			this.handler(ctx)
 		}
 	}
 	return nil

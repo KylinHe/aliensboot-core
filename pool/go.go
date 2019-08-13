@@ -36,7 +36,9 @@ func (g *Go) Go(f func(), cb func()) {
 	go func() {
 		defer func() {
 			g.ChanCb <- cb
-			exception.CatchStackDetail()
+			if err := recover(); err != nil {
+				exception.PrintStackDetail(err)
+			}
 		}()
 
 		f()
@@ -46,7 +48,9 @@ func (g *Go) Go(f func(), cb func()) {
 func (g *Go) Cb(cb func()) {
 	defer func() {
 		g.pendingGo--
-		exception.CatchStackDetail()
+		if err := recover(); err != nil {
+			exception.PrintStackDetail(err)
+		}
 	}()
 
 	if cb != nil {
@@ -88,7 +92,9 @@ func (c *LinearContext) Go(f func(), cb func()) {
 
 		defer func() {
 			c.g.ChanCb <- e.cb
-			exception.CatchStackDetail()
+			if err := recover(); err != nil {
+				exception.PrintStackDetail(err)
+			}
 		}()
 
 		e.f()
