@@ -94,6 +94,16 @@ func (this *Database) Update(collection string, selector interface{}, update int
 	return s.DB(this.dbName).C(collection).Update(selector, update)
 }
 
+//清除数据库
+func (this *Database) DropDatabase() error {
+	s := this.dbContext.Ref()
+	defer this.dbContext.UnRef(s)
+	err := s.DB(this.dbName).DropDatabase()
+	if err != nil && this.errorHandler != nil {
+		this.errorHandler(err)
+	}
+	return err
+}
 
 func (this *Database) NextSeq(tableMeta *dbconfig.TableMeta) (int64, error) {
 	return this.dbContext.NextSeq(this.dbName, IdStore, tableMeta.Name)
@@ -116,6 +126,8 @@ func (this *Database) Ref(data interface{}, handler func(meta *dbconfig.TableMet
 	}
 	return err
 }
+
+
 
 //func (this *Database) RefSession(handler func(database *mgo.Database) error) error {
 //	s := this.dbContext.Ref()
