@@ -109,7 +109,7 @@ func (this *GRPCService) Equals(other IService) bool {
 	if !ok {
 		return false
 	}
-	return this.Name == otherService.Name && this.Address == otherService.Address && this.Port == this.Port
+	return this.Address == otherService.Address && this.Port == this.Port
 }
 
 //服务是否本进程启动的
@@ -159,7 +159,7 @@ func (this *GRPCService) Request(request *base.Any) (*base.Any, error) {
 //让服务接收消息，不需要响应
 func (this *GRPCService) Send(request *base.Any) error {
 	//服务为本机，直接处理
-	
+
 	//if this.IsLocal() {
 	//	this.server.LocalRequest(request)
 	//	return nil

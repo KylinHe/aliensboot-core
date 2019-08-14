@@ -20,6 +20,12 @@ var DBServiceProxy = &dbHandler{}
 type dbHandler struct {
 }
 
+
+
+func (handler *dbHandler) InsertMulti(data []interface{}, dbHandler database2.IDatabaseHandler) {
+	database.ChanRPC.Go(constant.DB_COMMAND_INSERT_MULTI, data, dbHandler)
+}
+
 func (handler *dbHandler) Insert(data database2.IData, dbHandler database2.IDatabaseHandler) {
 	database.ChanRPC.Go(constant.DB_COMMAND_INSERT, data.Copy(), dbHandler)
 }

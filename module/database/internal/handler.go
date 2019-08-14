@@ -16,6 +16,9 @@ func init() {
 	skeleton.RegisterChanRPC(constant.DB_COMMAND_FUPDATE, forceUpdate)
 	skeleton.RegisterChanRPC(constant.DB_COMMAND_CONDITION_UPDATE, conditionUpdate)
 	skeleton.RegisterChanRPC(constant.DB_COMMAND_CONDITION_DELETE, conditionDelete)
+	skeleton.RegisterChanRPC(constant.DB_COMMAND_INSERT_MULTI, handleInsertMulti)
+
+
 }
 
 func handleDelete(args []interface{}) {
@@ -28,6 +31,13 @@ func handleInsert(args []interface{}) {
 	handler := args[1].(database.IDatabaseHandler)
 	err := handler.Insert(args[0])
 	debugLog("insert", args[0], err)
+}
+
+func handleInsertMulti(args []interface{}) {
+	handler := args[1].(database.IDatabaseHandler)
+	data := args[0].([]interface{})
+	err := handler.InsertMulti(data)
+	debugLog("insert multi", args[0], err)
 }
 
 func handleUpdate(args []interface{}) {
