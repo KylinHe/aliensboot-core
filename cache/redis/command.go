@@ -59,6 +59,7 @@ const (
 	OP_R_PUSH  string = "RPUSH"
 	OP_L_RANGE string = "LRANGE"
 	OP_L_LEN   string = "LLEN"
+	OP_L_REM   string = "LREM"
 
 	OP_Z_COUNT           string = "ZCOUNT"
 	OP_Z_ADD             string = "ZADD"

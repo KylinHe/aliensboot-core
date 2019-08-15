@@ -31,6 +31,11 @@ func (this *RedisCacheClient) LPush(key string, value interface{}) (int, error) 
 	return redis.Int(this.Do(OP_L_PUSH, key, value))
 }
 
+func (this *RedisCacheClient) LRem(key string,count interface{},value interface{}) error {
+	_,err := this.Do(OP_L_REM,key,count,value)
+	return err
+}
+
 //func (this *RedisCacheClient)LPushMulti(key string, values []string) int {
 //	conn := this.pool.Get()
 //	defer conn.Close()
