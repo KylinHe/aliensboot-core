@@ -109,7 +109,7 @@ func (this *Database) NextSeq(tableMeta *dbconfig.TableMeta) (int64, error) {
 	return this.dbContext.NextSeq(this.dbName, IdStore, tableMeta.Name)
 }
 
-func (this *Database) Ref(data interface{}, handler func(meta *dbconfig.TableMeta, db *mgo.Collection) error) error {
+func (this *Database) Ref(data database.IData, handler func(meta *dbconfig.TableMeta, db *mgo.Collection) error) error {
 	tableMeta, err := this.GetTableMeta(data)
 	if err != nil {
 		if this.errorHandler != nil {
@@ -139,7 +139,7 @@ func (this *Database) Ref(data interface{}, handler func(meta *dbconfig.TableMet
 //	return err
 //}
 
-func (this *Database) BoolRef(data interface{}, handler func(meta *dbconfig.TableMeta, db *mgo.Collection) (bool, error)) (bool, error) {
+func (this *Database) BoolRef(data database.IData, handler func(meta *dbconfig.TableMeta, db *mgo.Collection) (bool, error)) (bool, error) {
 	tableMeta, err := this.GetTableMeta(data)
 	if err != nil {
 		if this.errorHandler != nil {
@@ -157,7 +157,7 @@ func (this *Database) BoolRef(data interface{}, handler func(meta *dbconfig.Tabl
 	return result, err
 }
 
-func (this *Database) IntRef(data interface{}, handler func(meta *dbconfig.TableMeta, db *mgo.Collection) (int, error)) (int, error) {
+func (this *Database) IntRef(data database.IData, handler func(meta *dbconfig.TableMeta, db *mgo.Collection) (int, error)) (int, error) {
 	tableMeta, err := this.GetTableMeta(data)
 	if err != nil {
 		return 0, err

@@ -6,6 +6,8 @@ import (
 	"github.com/KylinHe/aliensboot-core/log"
 	"github.com/KylinHe/aliensboot-core/module/database/constant"
 	"reflect"
+
+	//"reflect"
 )
 
 func init() {
@@ -23,13 +25,13 @@ func init() {
 
 func handleDelete(args []interface{}) {
 	handler := args[1].(database.IDatabaseHandler)
-	err := handler.DeleteOne(args[0])
+	err := handler.DeleteOne(args[0].(database.IData))
 	debugLog("delete", args[0], err)
 }
 
 func handleInsert(args []interface{}) {
 	handler := args[1].(database.IDatabaseHandler)
-	err := handler.Insert(args[0])
+	err := handler.Insert(args[0].(database.IData))
 	debugLog("insert", args[0], err)
 }
 
@@ -42,13 +44,13 @@ func handleInsertMulti(args []interface{}) {
 
 func handleUpdate(args []interface{}) {
 	handler := args[1].(database.IDatabaseHandler)
-	err := handler.UpdateOne(args[0])
+	err := handler.UpdateOne(args[0].(database.IData))
 	debugLog("update", args[0], err)
 }
 
 func forceUpdate(args []interface{}) {
 	handler := args[1].(database.IDatabaseHandler)
-	err := handler.ForceUpdateOne(args[0])
+	err := handler.ForceUpdateOne(args[0].(database.IData))
 	debugLog("force update", args[0], err)
 }
 
@@ -60,14 +62,14 @@ func conditionUpdate(args []interface{}) {
 
 func conditionDelete(args []interface{}) {
 	handler := args[2].(database.IDatabaseHandler)
-	err := handler.DeleteOneCondition(args[0], args[1])
+	err := handler.DeleteOneCondition(args[0].(database.IData), args[1])
 	debugLog("condition delete", args[0], err)
 }
 
 func debugLog(opt string, data interface{}, err error) {
 	if aliensboot.IsDebug() {
-		typeName := reflect.TypeOf(data).Name()
 		if err != nil {
+			typeName := reflect.TypeOf(data).Name()
 			log.Debugf("[%v] %v err: %v", opt, typeName, err)
 		}
 	}

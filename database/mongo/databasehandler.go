@@ -1,6 +1,7 @@
 package mongo
 
 import (
+	"github.com/KylinHe/aliensboot-core/database"
 	"github.com/KylinHe/aliensboot-core/log"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -20,7 +21,7 @@ const (
 
 
 //获取表格名和id值
-func (this *Database) GetTableMeta(data interface{}) (*dbconfig.TableMeta, error) {
+func (this *Database) GetTableMeta(data database.IData) (*dbconfig.TableMeta, error) {
 	tableType := reflect.TypeOf(data)
 	result, ok := this.tableMetas[tableType]
 	if !ok {
@@ -29,7 +30,7 @@ func (this *Database) GetTableMeta(data interface{}) (*dbconfig.TableMeta, error
 	return result, nil
 }
 
-//func (this *Database) GetID(data interface{}) interface{} {
+//func (this *Database) GetID(data database.IData) interface{} {
 //	tableMeta, err := this.GetTableMeta(data)
 //	if err != nil {
 //		return -1
@@ -37,21 +38,21 @@ func (this *Database) GetTableMeta(data interface{}) (*dbconfig.TableMeta, error
 //	return this.reflectID(data, tableMeta.IDName)
 //}
 
-func (this *Database) reflectID(data interface{}, idName string) interface{} {
+func (this *Database) reflectID(data database.IData, idName string) interface{} {
 	return reflect.ValueOf(data).Elem().FieldByName(idName).Interface()
 }
 
 
 
 //新增自增长键
-//func (this *Database) EnsureCounter(data interface{}) {
+//func (this *Database) EnsureCounter(data database.IData) {
 //	this.validateConnection()
 //	tableMeta := this.GetTableMeta(data)
 //	this.dbContext.EnsureCounter(this.dbName, IdStore, tableMeta)
 //}
 
 //确保索引
-//func (this *Database) EnsureUniqueIndex(data interface{}, key string) error {
+//func (this *Database) EnsureUniqueIndex(data database.IData, key string) error {
 //	this.validateConnection()
 //	tableMeta, err := this.GetTableMeta(data)
 //	if err != nil {
@@ -60,7 +61,7 @@ func (this *Database) reflectID(data interface{}, idName string) interface{} {
 //	return this.dbContext.EnsureUniqueIndex(this.dbName, tableMeta, []string{key})
 //}
 
-func (this *Database) EnsureTable(name string, data interface{}) error {
+func (this *Database) EnsureTable(name string, data database.IData) error {
 	//this.validateConnection()
 	tableType := reflect.TypeOf(data)
 	if tableType == nil || tableType.Kind() != reflect.Ptr {
@@ -110,10 +111,10 @@ func (this *Database) EnsureTable(name string, data interface{}) error {
 	return nil
 }
 
-func (this *Database) Related(data interface{}, relateData interface{}, relateTableName string, relateKey string) error {
-	//mongo采用树形结构，不用建立关系
-	return nil
-}
+//func (this *Database) Related(data database.IData, relatedata database.IData, relateTableName string, relateKey string) error {
+//	//mongo采用树形结构，不用建立关系
+//	return nil
+//}
 
 func (this *Database) EnsureIndex(name string, key []string, unique bool) error {
 	if unique {
@@ -123,7 +124,7 @@ func (this *Database) EnsureIndex(name string, key []string, unique bool) error 
 }
 
 //自增长id
-//func (this *Database) GenId(data interface{}) (int32, error) {
+//func (this *Database) GenId(data database.IData) (int32, error) {
 //	this.validateConnection()
 //	tableMeta, err := this.GetTableMeta(data)
 //	if err != nil {
@@ -134,7 +135,7 @@ func (this *Database) EnsureIndex(name string, key []string, unique bool) error 
 //	return int32(newid), nil
 //}
 //
-//func (this *Database) InsertWithoutID(data interface{}) error {
+//func (this *Database) InsertWithoutID(data database.IData) error {
 //	this.validateConnection()
 //	tableMeta, err := this.GetTableMeta(data)
 //	if err != nil {
@@ -144,7 +145,7 @@ func (this *Database) EnsureIndex(name string, key []string, unique bool) error 
 //}
 
 //插入新数据
-func (this *Database) Insert(data interface{}) error {
+func (this *Database) Insert(data database.IData) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		if tableMeta.AutoIncrement {
 			newId, err1 := this.NextSeq(tableMeta)
@@ -162,7 +163,7 @@ func (this *Database) InsertMulti(datas []interface{}) error {
 	if datas == nil || len(datas) == 0 {
 		return nil
 	}
-	data := datas[0]
+	data := datas[0].(database.IData)
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		if tableMeta.AutoIncrement {
 			newId, err1 := this.NextSeq(tableMeta)
@@ -175,7 +176,7 @@ func (this *Database) InsertMulti(datas []interface{}) error {
 	})
 }
 
-func (this *Database) QueryAllLimit(data interface{}, result interface{}, limit int, callback func(interface{}) bool) error {
+func (this *Database) QueryAllLimit(data database.IData, result interface{}, limit int, callback func(interface{}) bool) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		skip := 0
 		for {
@@ -193,33 +194,33 @@ func (this *Database) QueryAllLimit(data interface{}, result interface{}, limit 
 }
 
 //查询所有数据
-func (this *Database) QueryAll(data interface{}, result interface{}) error {
+func (this *Database) QueryAll(data database.IData, result interface{}) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		return collection.Find(nil).All(result)
 	})
 }
 
 //查询单条记录
-func (this *Database) QueryOne(data interface{}) error {
+func (this *Database) QueryOne(data database.IData) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		return collection.FindId(this.reflectID(data, tableMeta.IDName)).One(data)
 	})
 
 }
 
-func (this *Database) DeleteOne(data interface{}) error {
+func (this *Database) DeleteOne(data database.IData) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		return collection.RemoveId(this.reflectID(data, tableMeta.IDName))
 	})
 }
 
-func (this *Database) DeleteOneCondition(data interface{}, selector interface{}) error {
+func (this *Database) DeleteOneCondition(data database.IData, selector interface{}) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		return collection.Remove(selector)
 	})
 }
 
-func (this *Database) DeleteAllCondition(data interface{}, selector interface{}) error {
+func (this *Database) DeleteAllCondition(data database.IData, selector interface{}) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		_, err := collection.RemoveAll(selector)
 		return err
@@ -227,7 +228,7 @@ func (this *Database) DeleteAllCondition(data interface{}, selector interface{})
 }
 
 //查询单条记录
-func (this *Database) IDExist(data interface{}) (bool, error) {
+func (this *Database) IDExist(data database.IData) (bool, error) {
 	return this.BoolRef(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) (bool, error) {
 		count, err := collection.FindId(this.reflectID(data, tableMeta.IDName)).Count()
 		return count != 0, err
@@ -237,7 +238,7 @@ func (this *Database) IDExist(data interface{}) (bool, error) {
 
 
 //按条件多条查询
-func (this *Database) QueryAllConditionLimit(data interface{}, condition string, value interface{}, result interface{}, limit int, callback func(interface{}) bool) error {
+func (this *Database) QueryAllConditionLimit(data database.IData, condition string, value interface{}, result interface{}, limit int, callback func(interface{}) bool) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		skip := 0
 		for {
@@ -254,80 +255,80 @@ func (this *Database) QueryAllConditionLimit(data interface{}, condition string,
 
 }
 
-func (this *Database) QueryAllConditionsLimit(data interface{}, conditions map[string]interface{}, result interface{}, limit int, sort ...string) error {
+func (this *Database) QueryAllConditionsLimit(data database.IData, conditions map[string]interface{}, result interface{}, limit int, sort ...string) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		return collection.Find(conditions).Sort(sort...).Limit(limit).All(result)
 	})
 }
 
-func (this *Database) QueryAllConditionSkipLimit(data interface{}, condition string, value interface{}, result interface{}, skip int, limit int, sort ...string) error {
+func (this *Database) QueryAllConditionSkipLimit(data database.IData, condition string, value interface{}, result interface{}, skip int, limit int, sort ...string) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		return collection.Find(bson.M{condition: value}).Sort(sort...).Limit(limit).Skip(skip).All(result)
 	})
 }
 
-func (this *Database) QueryAllConditionsSkipLimit(data interface{}, conditions map[string]interface{}, result interface{}, skip int, limit int, sort ...string) error {
+func (this *Database) QueryAllConditionsSkipLimit(data database.IData, conditions map[string]interface{}, result interface{}, skip int, limit int, sort ...string) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		return collection.Find(conditions).Sort(sort...).Limit(limit).Skip(skip).All(result)
 	})
 }
 
 //按条件多条查询
-func (this *Database) QueryAllCondition(data interface{}, condition string, value interface{}, result interface{}) error {
+func (this *Database) QueryAllCondition(data database.IData, condition string, value interface{}, result interface{}) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		return collection.Find(bson.M{condition: value}).All(result)
 	})
 
 }
 
-func (this *Database) QueryAllConditions(data interface{}, conditions map[string]interface{}, result interface{}) error {
+func (this *Database) QueryAllConditions(data database.IData, conditions map[string]interface{}, result interface{}) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		return collection.Find(conditions).All(result)
 	})
 
 }
 
-func (this *Database) QueryConditionCount(data interface{}, condition string, value interface{}) (int, error) {
+func (this *Database) QueryConditionCount(data database.IData, condition string, value interface{}) (int, error) {
 	return this.IntRef(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) (int, error) {
 		return collection.Find(bson.M{condition: value}).Count()
 	})
 
 }
 
-func (this *Database) QueryConditionsCount(data interface{}, query interface{}) (int, error) {
+func (this *Database) QueryConditionsCount(data database.IData, query interface{}) (int, error) {
 	return this.IntRef(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) (int, error) {
 		return collection.Find(query).Count()
 	})
 
 }
 
-func (this *Database) PipeAllConditions(data interface{}, pipeline interface{}, result interface{}) error {
+func (this *Database) PipeAllConditions(data database.IData, pipeline interface{}, result interface{}) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		return collection.Pipe(pipeline).All(result)
 	})
 }
 
-func (this *Database) QueryOneConditions (data interface{}, conditions map[string]interface{}) error {
+func (this *Database) QueryOneConditions (data database.IData, conditions map[string]interface{}) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		return collection.Find(conditions).One(data)
 	})
 }
 
 //按条件单条查询
-func (this *Database) QueryOneCondition(data interface{}, condition string, value interface{}) error {
+func (this *Database) QueryOneCondition(data database.IData, condition string, value interface{}) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		return collection.Find(bson.M{condition: value}).One(data)
 	})
 }
 
 //更新单条数据
-func (this *Database) UpdateOne(data interface{}) error {
+func (this *Database) UpdateOne(data database.IData) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
 		return collection.UpdateId(this.reflectID(data, tableMeta.IDName), data)
 	})
 }
 
-func (this *Database) ForceUpdateOne(data interface{}) error {
+func (this *Database) ForceUpdateOne(data database.IData) error {
 	result, err := this.IDExist(data)
 	if err != nil {
 		return err

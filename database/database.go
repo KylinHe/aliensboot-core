@@ -18,7 +18,8 @@ type IDatabaseFactory interface {
 }
 
 type IData interface {
-	Copy() interface{} //支持拷贝
+	GetDataId() interface{} //获取数据id 不能为指针
+	Copy() IData //支持拷贝
 }
 
 type Authority struct {
@@ -28,37 +29,38 @@ type Authority struct {
 
 //数据库handler
 type IDatabaseHandler interface {
-	GetTableMeta(data interface{}) (*dbconfig.TableMeta, error)
-	//GetTableName(data interface{}) (string, error)
-	EnsureTable(name string, data interface{}) error //确保表存在
-	//GetID(data interface{}) interface{}
+	GetTableMeta(data IData) (*dbconfig.TableMeta, error)
+	//GetTableName(data IData) (string, error)
+	EnsureTable(name string, data IData) error //确保表存在
+	//GetID(data IData) interface{}
 	EnsureIndex(name string, key []string, unique bool) error                                                       //确保索引
-	Related(data interface{}, relateData interface{}, relateTableName string, relateKey string) error //创建依赖关系
-	//GenId(data interface{}) (int32, error)
-	//InsertWithoutID(data interface{}) error
-	//GenTimestampId(data interface{}) (int64, error)
-	Insert(data interface{}) error
+
+	//Related(data IData, relateData interface{}, relateTableName string, relateKey string) error //创建依赖关系
+	//GenId(data IData) (int32, error)
+	//InsertWithoutID(data IData) error
+	//GenTimestampId(data IData) (int64, error)
+	Insert(data IData) error
 	InsertMulti(data []interface{}) error  //插入多条数据
-	QueryAll(data interface{}, result interface{}) error
-	QueryAllLimit(data interface{}, result interface{}, limit int, callback func(interface{}) bool) error
-	QueryAllConditionLimit(data interface{}, condition string, value interface{}, result interface{}, limit int, callback func(interface{}) bool) error
-	QueryAllConditionsLimit(data interface{}, conditions map[string]interface{}, result interface{}, limit int, sort ...string) error
-	QueryAllConditionSkipLimit(data interface{}, condition string, value interface{}, result interface{}, skip int, limit int, sort ...string) error
-	QueryAllConditionsSkipLimit(data interface{}, conditions map[string]interface{}, result interface{}, skip int, limit int, sort ...string) error
-	QueryAllCondition(data interface{}, condition string, value interface{}, result interface{}) error
-	QueryAllConditions(data interface{}, conditions map[string]interface{}, result interface{}) error
-	QueryConditionCount(data interface{}, condition string, value interface{}) (int, error)
-	QueryConditionsCount(data interface{}, query interface{}) (int, error)
-	PipeAllConditions(data interface{}, pipeline interface{}, result interface{}) error
-	QueryOne(data interface{}) error
-	QueryOneCondition(data interface{}, condition string, value interface{}) error
-	QueryOneConditions (data interface{}, conditions map[string]interface{}) error
-	IDExist(data interface{}) (bool, error)
-	DeleteOne(data interface{}) error
-	DeleteOneCondition(data interface{}, selector interface{}) error
-	DeleteAllCondition(data interface{}, selector interface{}) error
-	UpdateOne(data interface{}) error
-	ForceUpdateOne(data interface{}) error //强制更新。不存在就插入
+	QueryAll(data IData, result interface{}) error
+	QueryAllLimit(data IData, result interface{}, limit int, callback func(interface{}) bool) error
+	QueryAllConditionLimit(data IData, condition string, value interface{}, result interface{}, limit int, callback func(interface{}) bool) error
+	QueryAllConditionsLimit(data IData, conditions map[string]interface{}, result interface{}, limit int, sort ...string) error
+	QueryAllConditionSkipLimit(data IData, condition string, value interface{}, result interface{}, skip int, limit int, sort ...string) error
+	QueryAllConditionsSkipLimit(data IData, conditions map[string]interface{}, result interface{}, skip int, limit int, sort ...string) error
+	QueryAllCondition(data IData, condition string, value interface{}, result interface{}) error
+	QueryAllConditions(data IData, conditions map[string]interface{}, result interface{}) error
+	QueryConditionCount(data IData, condition string, value interface{}) (int, error)
+	QueryConditionsCount(data IData, query interface{}) (int, error)
+	PipeAllConditions(data IData, pipeline interface{}, result interface{}) error
+	QueryOne(data IData) error
+	QueryOneCondition(data IData, condition string, value interface{}) error
+	QueryOneConditions (data IData, conditions map[string]interface{}) error
+	IDExist(data IData) (bool, error)
+	DeleteOne(data IData) error
+	DeleteOneCondition(data IData, selector interface{}) error
+	DeleteAllCondition(data IData, selector interface{}) error
+	UpdateOne(data IData) error
+	ForceUpdateOne(data IData) error //强制更新。不存在就插入
 	Update(collection string, selector interface{}, update interface{}) error
 }
 
