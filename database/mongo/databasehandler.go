@@ -203,14 +203,14 @@ func (this *Database) QueryAll(data database.IData, result interface{}) error {
 //查询单条记录
 func (this *Database) QueryOne(data database.IData) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
-		return collection.FindId(this.reflectID(data, tableMeta.IDName)).One(data)
+		return collection.FindId(data.GetDataId()).One(data)
 	})
 
 }
 
 func (this *Database) DeleteOne(data database.IData) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
-		return collection.RemoveId(this.reflectID(data, tableMeta.IDName))
+		return collection.RemoveId(data.GetDataId())
 	})
 }
 
@@ -230,7 +230,7 @@ func (this *Database) DeleteAllCondition(data database.IData, selector interface
 //查询单条记录
 func (this *Database) IDExist(data database.IData) (bool, error) {
 	return this.BoolRef(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) (bool, error) {
-		count, err := collection.FindId(this.reflectID(data, tableMeta.IDName)).Count()
+		count, err := collection.FindId(data.GetDataId()).Count()
 		return count != 0, err
 	})
 
@@ -324,7 +324,7 @@ func (this *Database) QueryOneCondition(data database.IData, condition string, v
 //更新单条数据
 func (this *Database) UpdateOne(data database.IData) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
-		return collection.UpdateId(this.reflectID(data, tableMeta.IDName), data)
+		return collection.UpdateId(data.GetDataId(), data)
 	})
 }
 
