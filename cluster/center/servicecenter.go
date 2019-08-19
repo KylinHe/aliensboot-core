@@ -26,6 +26,13 @@ const ServiceNodeName string = "service"
 
 const ConfigNodeName string = "config"
 
+type DataEventType int32
+
+const (
+	PUT    DataEventType = 0
+	DELETE DataEventType = 1
+)
+
 func PublicService(config config.ServiceConfig, handler interface{}) service.IService {
 	var service service.IService = nil
 	service = startService(config, handler)
@@ -85,6 +92,10 @@ func ReleaseService(service service.IService) {
 
 type ConfigListener func(data []byte)
 
+//
+type DataPrefixListener func(eventType DataEventType, data []byte, dataRootName string, dataName string)
+
+
 type ServiceCenter interface {
 
 	GetNodeID() string //获取当前节点id
@@ -98,6 +109,8 @@ type ServiceCenter interface {
 	PublicConfig(configName string, content []byte) bool        //发布配置
 
 	SubscribeConfig(configName string, listener ConfigListener) //订阅配置
+
+	SubscribeConfigWithPrefix(configName string, listener DataPrefixListener) //
 
 	ReleaseService(service service.IService)                  //释放服务
 

@@ -17,7 +17,6 @@ import (
 	"github.com/KylinHe/aliensboot-core/exception"
 	"github.com/KylinHe/aliensboot-core/log"
 	"github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"gopkg.in/mgo.v2/bson"
 	"sync"
 	"time"
@@ -244,47 +243,56 @@ func (this *ETCDServiceCenter) SubscribeService(healthyOnly bool, serviceName st
 	}, false)
 
 	serviceRootPath := this.serviceRoot + NodeSplit + serviceName + NodeSplit
-	prefixLen := len(serviceRootPath)
-
-	rsp, err := this.client.Get(newTimeoutContext(), serviceRootPath, clientv3.WithPrefix())
-	//serviceIDs, _, ch, err := this.zkCon.ChildrenW(serviceRootPath)
+	err := this.AddDataPrefixListener(serviceRootPath, serviceName, this.handleService)
 	if err != nil {
 		log.Errorf("subscribe service %v error: %v", serviceRootPath, err)
-		return
+	}
+}
+
+
+func (this *ETCDServiceCenter) AddDataPrefixListener(dataRootPath string, dataRootName string, handler DataPrefixListener) error {
+	prefixLen := len(dataRootPath)
+	rsp, err := this.client.Get(newTimeoutContext(), dataRootPath, clientv3.WithPrefix())
+	if err != nil {
+		return err
 	}
 	for _, v := range rsp.Kvs {
-		this.handleService(mvccpb.PUT, v, serviceName, prefixLen)
-	}
-	go this.openListener(serviceName, serviceRootPath)
-}
-
-func (this *ETCDServiceCenter) openListener(serviceName string, serviceRootPath string) {
-	ch := this.client.Watch(context.TODO(), serviceRootPath, clientv3.WithPrefix())
-	prefixLen := len(serviceRootPath)
-	for {
-		//只要消息管道没有关闭，就一直等待用户请求
-		event, _ := <-ch
-		for _, serviceEvent := range event.Events {
-			this.handleService(serviceEvent.Type, serviceEvent.Kv, serviceName, prefixLen)
+		dataPath := string(v.Key)
+		dataName := dataPath[prefixLen:]
+		if dataName != "" {
+			handler(PUT, v.Value, dataRootName, dataName)
 		}
 	}
+
+	go func() {
+		ch := this.client.Watch(context.TODO(), dataRootPath, clientv3.WithPrefix())
+		for {
+			//只要消息管道没有关闭，就一直等待用户请求
+			event, _ := <-ch
+			for _, dataEvent := range event.Events {
+				dataPath := string(dataEvent.Kv.Key)
+				dataName := dataPath[prefixLen:]
+				if dataName != "" {
+					handler(DataEventType(dataEvent.Type), dataEvent.Kv.Value, dataRootName, dataName)
+				}
+			}
+		}
+	}()
+	return nil
 }
 
-func (this *ETCDServiceCenter) handleService(eventType mvccpb.Event_EventType, v *mvccpb.KeyValue, serviceName string, prefixLen int) {
-	servicePath := string(v.Key)
-	data := v.Value
-	serviceID := servicePath[prefixLen:]
-	if eventType == clientv3.EventTypePut {
+func (this *ETCDServiceCenter) handleService(eventType DataEventType, data []byte, dataRootName string, dataName string) {
+	if eventType == PUT {
 		centerService := &service.CenterService{}
 		err1 := json.Unmarshal(data, centerService)
 		if err1 != nil {
-			log.Errorf("unmarshal service %v data error: %v", servicePath, err1)
+			log.Errorf("unmarshal service %v data error: %v", dataRootName, err1)
 			return
 		}
-		service, _ := service.NewService2(centerService, serviceID, serviceName)
+		service, _ := service.NewService2(centerService, dataName, dataRootName)
 		this.Container.UpdateService(service, false)
-	} else if eventType == clientv3.EventTypeDelete {
-		this.Container.RemoveService(serviceName, serviceID)
+	} else if eventType == DELETE {
+		this.Container.RemoveService(dataRootName, dataName)
 	}
 
 }
@@ -293,6 +301,16 @@ func (this *ETCDServiceCenter) SubscribeConfig(configName string, configHandler 
 	configPath := this.configRoot + NodeSplit + configName
 	this.SubscribeData(configPath, configHandler, true)
 }
+
+// 订阅前缀配置
+func (this *ETCDServiceCenter) SubscribeConfigWithPrefix(configName string, listener DataPrefixListener) {
+	configPath := this.configRoot + NodeSplit + configName + NodeSplit
+	err := this.AddDataPrefixListener(configPath, configName, listener)
+	if err != nil {
+		log.Errorf("subscribe config with prefix %v error: %v", configName, err)
+	}
+}
+
 
 func (this *ETCDServiceCenter) SubscribeData(path string, configHandler ConfigListener, ensure bool) {
 	rsp, err := this.client.Get(newTimeoutContext(), path)
