@@ -139,18 +139,19 @@ func (manager *TimerManager) AddTimer(d time.Duration, callback CallbackFunc) *T
 	if d < minInterval {
 		d = minInterval
 	}
+	fireTime := time.Now().Add(d)
+	return manager.addtimer(fireTime,d,callback)
+}
 
-	t := &Timer{
-		fireTime: time.Now().Add(d),
-		interval: d,
-		callback: callback,
-		repeat:   true,
+func (manager *TimerManager) AddTimer1(timestamp int64,d time.Duration, callback CallbackFunc) (*Timer,bool) {
+	if timestamp < time.Now().Unix() {
+		return nil,false
 	}
-	t.addSeq = manager.nextAddSeq
-	manager.nextAddSeq += 1
-
-	heap.Push(manager._TimerHeap, t)
-	return t
+	if d < minInterval {
+		d = minInterval
+	}
+	fireTime := time.Unix(timestamp, 0)
+	return manager.addtimer(fireTime,d,callback),true
 }
 
 // Tick once for timers
@@ -218,4 +219,19 @@ func runCallback(callback CallbackFunc, param []interface{}) {
 		}
 	}()
 	callback(param)
+}
+
+//
+func (manager *TimerManager) addtimer(fireTime time.Time,d time.Duration, callback CallbackFunc) *Timer {
+	t := &Timer{
+		fireTime: fireTime,
+		interval: d,
+		callback: callback,
+		repeat:   true,
+	}
+	t.addSeq = manager.nextAddSeq
+	manager.nextAddSeq += 1
+
+	heap.Push(manager._TimerHeap, t)
+	return t
 }
