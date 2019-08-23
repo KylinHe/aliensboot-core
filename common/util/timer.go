@@ -98,6 +98,31 @@ func (h *_TimerHeap) Pop() (ret interface{}) {
 // Type of callback function
 type CallbackFunc func(param []interface{})
 
+func (manager *TimerManager) AddTimestampCallback(timestamp int64, callback CallbackFunc, param ...interface{}) *Timer {
+	if timestamp <= 0 {
+		return nil
+	}
+	delay := timestamp - time.Now().Unix()
+	if delay <= 0 {
+		callback(param)
+		return nil
+	}
+	fireTime := time.Unix(timestamp, 0)
+	return manager.AddTimeCallback(fireTime, callback, param...)
+}
+
+func (manager *TimerManager) AddTimestampTimer(timestamp int64, duration time.Duration, callback CallbackFunc) *Timer {
+	if timestamp <= 0 {
+		return nil
+	}
+	delay := timestamp - time.Now().Unix()
+	if delay <= 0 {
+		callback(nil)
+		return nil
+	}
+	return manager.AddDelayTimer(time.Duration(delay) * time.Second, duration, callback)
+}
+
 func (manager *TimerManager) AddTimeCallback(fireTime time.Time, callback CallbackFunc, param ...interface{}) *Timer {
 	t := &Timer{
 		fireTime: fireTime,
@@ -113,10 +138,10 @@ func (manager *TimerManager) AddTimeCallback(fireTime time.Time, callback Callba
 	return t
 }
 
-func (manager *TimerManager) AddTimestampCallback(timestamp int64, callback CallbackFunc, param ...interface{}) *Timer {
-	fireTime := time.Unix(timestamp, 0)
-	return manager.AddTimeCallback(fireTime, callback, param...)
-}
+//func (manager *TimerManager) AddTimestampCallback(timestamp int64, callback CallbackFunc, param ...interface{}) *Timer {
+//	fireTime := time.Unix(timestamp, 0)
+//	return manager.AddTimeCallback(fireTime, callback, param...)
+//}
 
 // Add a callback which will be called after specified duration
 func (manager *TimerManager) AddCallback(d time.Duration, callback CallbackFunc, param ...interface{}) *Timer {
@@ -135,23 +160,20 @@ func (manager *TimerManager) AddCallback(d time.Duration, callback CallbackFunc,
 }
 
 // Add a timer which calls callback periodly
-func (manager *TimerManager) AddTimer(d time.Duration, callback CallbackFunc) *Timer {
-	if d < minInterval {
-		d = minInterval
+func (manager *TimerManager) AddTimer(duration time.Duration, callback CallbackFunc) *Timer {
+	if duration < minInterval {
+		duration = minInterval
 	}
-	fireTime := time.Now().Add(d)
-	return manager.addtimer(fireTime,d,callback)
+	fireTime := time.Now().Add(duration)
+	return manager.addtimer(fireTime, duration, callback)
 }
 
-func (manager *TimerManager) AddTimer1(timestamp int64,d time.Duration, callback CallbackFunc) (*Timer,bool) {
-	if timestamp < time.Now().Unix() {
-		return nil,false
+func (manager *TimerManager) AddDelayTimer(delay time.Duration, duration time.Duration, callback CallbackFunc) *Timer {
+	if duration < minInterval {
+		duration = minInterval
 	}
-	if d < minInterval {
-		d = minInterval
-	}
-	fireTime := time.Unix(timestamp, 0)
-	return manager.addtimer(fireTime,d,callback),true
+	fireTime := time.Now().Add(delay)
+	return manager.addtimer(fireTime, duration, callback)
 }
 
 // Tick once for timers
