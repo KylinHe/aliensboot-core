@@ -44,7 +44,9 @@ func(container *TimerContainer) CancelAll() {
 		group.Cancel()
 	}
 	for _, timer := range container.singleMapping {
-		timer.Cancel()
+		if timer != nil {
+			timer.Cancel()
+		}
 	}
 }
 
