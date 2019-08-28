@@ -123,7 +123,7 @@ func (wsConn *WSConn) WriteMsg(args ...[]byte) error {
 
 	// check len
 	if msgLen > wsConn.maxMsgLen {
-		return errors.New("message too long")
+		return errors.New(fmt.Sprintf("message too long %v-%v",msgLen, wsConn.maxMsgLen))
 	} else if msgLen < 1 {
 		return errors.New("message too short")
 	}
