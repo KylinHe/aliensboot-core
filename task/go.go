@@ -14,9 +14,11 @@ import "github.com/KylinHe/aliensboot-core/exception"
 // 安全运行携程
 func SafeGo(task func()) {
 	go func() {
-		if err := recover(); err != nil {
-			exception.PrintStackDetail(err)
-		}
+		defer func() {
+			if err := recover(); err != nil {
+				exception.PrintStackDetail(err)
+			}
+		}()
 		task()
 	}()
 }
