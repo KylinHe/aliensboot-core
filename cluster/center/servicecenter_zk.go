@@ -14,6 +14,7 @@ import (
 	"github.com/KylinHe/aliensboot-core/cluster/center/service"
 	"github.com/KylinHe/aliensboot-core/config"
 	"github.com/KylinHe/aliensboot-core/log"
+	"github.com/KylinHe/aliensboot-core/task"
 	"github.com/samuel/go-zookeeper/zk"
 	"gopkg.in/mgo.v2/bson"
 	"time"
@@ -232,7 +233,7 @@ func (this *ZKServiceCenter) SubscribeConfig(configName string, configHandler Co
 		return
 	}
 	configHandler(content)
-	go func() {
+	task.SafeGo(func() {
 		for {
 			event, _ := <-ch
 			//更新配置节点信息
@@ -246,7 +247,7 @@ func (this *ZKServiceCenter) SubscribeConfig(configName string, configHandler Co
 			}
 		}
 
-	}()
+	})
 }
 
 //func (this *ZKServiceCenter) AddServiceListener(listener service.Listener) {

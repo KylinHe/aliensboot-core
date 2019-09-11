@@ -14,6 +14,7 @@ import (
 	"github.com/KylinHe/aliensboot-core/common/util"
 	"github.com/KylinHe/aliensboot-core/log"
 	"github.com/KylinHe/aliensboot-core/protocol/base"
+	"github.com/KylinHe/aliensboot-core/task"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"reflect"
@@ -35,13 +36,13 @@ func (this *HttpService) Start() bool {
 		Addr:   ":" + util.IntToString(this.Port),
 		Handler: this.handler,
 	}
-	go func() {
+	task.SafeGo(func() {
 		log.Debugf("Http Bind Port %v", this.srv.Addr)
 		if err := this.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal("start http service err : %v", err)
 			this.srv = nil
 		}
-	}()
+	})
 	return true
 }
 

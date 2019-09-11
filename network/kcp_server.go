@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/KylinHe/aliensboot-core/config"
 	"github.com/KylinHe/aliensboot-core/log"
+	"github.com/KylinHe/aliensboot-core/task"
 	"github.com/xtaci/kcp-go"
 	"golang.org/x/crypto/pbkdf2"
 	"net"
@@ -145,8 +146,7 @@ func (server *KCPServer) run() {
 
 		kcpConn := newKCPConn(conn, server.PendingWriteNum, server.msgParser)
 		agent := server.NewAgent(kcpConn)
-
-		go func() {
+		task.SafeGo(func() {
 			defer func() {
 				if err := recover(); err != nil {
 					buf := make([]byte, 2048)
@@ -164,7 +164,7 @@ func (server *KCPServer) run() {
 			agent.OnClose()
 
 			server.wgConns.Done()
-		}()
+		})
 
 	}
 }

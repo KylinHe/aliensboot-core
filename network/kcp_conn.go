@@ -3,6 +3,7 @@ package network
 import (
 	"fmt"
 	"github.com/KylinHe/aliensboot-core/log"
+	"github.com/KylinHe/aliensboot-core/task"
 	"github.com/xtaci/kcp-go"
 	"net"
 	"runtime"
@@ -23,7 +24,7 @@ func newKCPConn(conn *kcp.UDPSession, pendingWriteNum int, msgParser *MsgParser)
 	kcpConn.writeChan = make(chan []byte, pendingWriteNum)
 	kcpConn.msgParser = msgParser
 
-	go func() {
+	task.SafeGo(func() {
 		defer func() {
 			if err := recover(); err != nil {
 				buf := make([]byte, 2048)
@@ -47,7 +48,7 @@ func newKCPConn(conn *kcp.UDPSession, pendingWriteNum int, msgParser *MsgParser)
 		kcpConn.Lock()
 		kcpConn.closeFlag = true
 		kcpConn.Unlock()
-	}()
+	})
 
 	return kcpConn
 }

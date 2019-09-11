@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/KylinHe/aliensboot-core/config"
 	"github.com/KylinHe/aliensboot-core/log"
+	"github.com/KylinHe/aliensboot-core/task"
 	"net"
 	"runtime"
 	"sync"
@@ -97,7 +98,7 @@ func (server *TCPServer) run() {
 
 		tcpConn := newTCPConn(conn, server.PendingWriteNum, server.msgParser)
 		agent := server.NewAgent(tcpConn)
-		go func() {
+		task.SafeGo(func() {
 			defer func() {
 				if err := recover(); err != nil {
 					buf := make([]byte, 2048)
@@ -116,7 +117,7 @@ func (server *TCPServer) run() {
 			agent.OnClose()
 
 			server.wgConns.Done()
-		}()
+		})
 	}
 }
 

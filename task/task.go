@@ -22,7 +22,7 @@ type TimerTask struct {
 }
 
 func (this *TimerTask) Start(executors ...func()) {
-	go func() {
+	SafeGo(func() {
 		this.running = true
 		for _ = range this.Ticker.C {
 			for _, executor := range executors {
@@ -30,7 +30,7 @@ func (this *TimerTask) Start(executors ...func()) {
 			}
 		}
 		this.running = false
-	}()
+	})
 }
 
 func (this *TimerTask) Close() {

@@ -12,6 +12,7 @@ package message
 import (
 	"github.com/KylinHe/aliensboot-core/exception"
 	"github.com/KylinHe/aliensboot-core/log"
+	"github.com/KylinHe/aliensboot-core/task"
 )
 
 type MessageChannel struct {
@@ -36,7 +37,7 @@ func (this *MessageChannel) WriteMsg(message interface{}) {
 
 func (this *MessageChannel) Open() {
 	this.channel = make(chan interface{}, this.messageLimit)
-	go func() {
+	task.SafeGo(func() {
 		defer func() {
 			if err := recover(); err != nil {
 				exception.PrintStackDetail(err)
@@ -51,7 +52,7 @@ func (this *MessageChannel) Open() {
 			this.handler(message)
 		}
 		this.Close()
-	}()
+	})
 }
 
 //关闭消息管道

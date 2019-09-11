@@ -1,10 +1,9 @@
 package network
 
 import (
-	"fmt"
 	"github.com/KylinHe/aliensboot-core/log"
+	"github.com/KylinHe/aliensboot-core/task"
 	"net"
-	"runtime"
 	"sync"
 )
 
@@ -24,15 +23,7 @@ func newTCPConn(conn net.Conn, pendingWriteNum int, msgParser *MsgParser) *TCPCo
 	tcpConn.writeChan = make(chan []byte, pendingWriteNum)
 	tcpConn.msgParser = msgParser
 
-	go func() {
-		defer func() {
-			if err := recover(); err != nil {
-				buf := make([]byte, 2048)
-				n := runtime.Stack(buf, false)
-				stackInfo := fmt.Sprintf("%s", buf[:n])
-				log.Error("panic stack info %s", stackInfo)
-			}
-		}()
+	task.SafeGo(func() {
 		for b := range tcpConn.writeChan {
 			if b == nil {
 				break
@@ -48,7 +39,7 @@ func newTCPConn(conn net.Conn, pendingWriteNum int, msgParser *MsgParser) *TCPCo
 		tcpConn.Lock()
 		tcpConn.closeFlag = true
 		tcpConn.Unlock()
-	}()
+	})
 
 	return tcpConn
 }

@@ -12,6 +12,7 @@ package redis
 import (
 	"github.com/KylinHe/aliensboot-core/config"
 	"github.com/KylinHe/aliensboot-core/log"
+	"github.com/KylinHe/aliensboot-core/task"
 	"github.com/garyburd/redigo/redis"
 	"os"
 	"time"
@@ -293,7 +294,7 @@ func (this *RedisCacheClient) Subscribe(callback func(channel, value string), ch
 	//defer conn.Close()
 	psc := redis.PubSubConn{Conn: this.pool.Get()}
 	err := psc.Subscribe(channel...)
-	go func() {
+	task.SafeGo(func() {
 		for {
 			switch v := psc.Receive().(type) {
 			case redis.Message:
@@ -304,7 +305,8 @@ func (this *RedisCacheClient) Subscribe(callback func(channel, value string), ch
 				return
 			}
 		}
-	}()
+	})
+
 	return err
 }
 
@@ -312,7 +314,7 @@ func (this *RedisCacheClient) PSubscribe(callback func(pattern, channel, value s
 	//defer conn.Close()
 	psc := &redis.PubSubConn{Conn: this.pool.Get()}
 	err := psc.PSubscribe(channel...)
-	go func() {
+	task.SafeGo(func() {
 		for {
 			switch v := psc.Receive().(type) {
 			case redis.PMessage:
@@ -323,7 +325,7 @@ func (this *RedisCacheClient) PSubscribe(callback func(pattern, channel, value s
 				return
 			}
 		}
-	}()
+	})
 	return err
 }
 

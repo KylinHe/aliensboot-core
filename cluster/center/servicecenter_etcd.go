@@ -16,6 +16,7 @@ import (
 	"github.com/KylinHe/aliensboot-core/config"
 	"github.com/KylinHe/aliensboot-core/exception"
 	"github.com/KylinHe/aliensboot-core/log"
+	"github.com/KylinHe/aliensboot-core/task"
 	"github.com/coreos/etcd/clientv3"
 	"gopkg.in/mgo.v2/bson"
 	"sync"
@@ -188,7 +189,7 @@ func newTimeoutContext() context.Context {
 func (this *ETCDServiceCenter) openTTLCheck(path string, data string) {
 	ticker := time.NewTicker(time.Second * time.Duration(this.ttl/2))
 	this.ttlCheck.Store(path, ticker)
-	go func(){
+	task.SafeGo(func(){
 		if err := recover(); err != nil {
 			exception.PrintStackDetail(err)
 		}
@@ -209,7 +210,7 @@ func (this *ETCDServiceCenter) openTTLCheck(path string, data string) {
 
 			}
 		}
-	}()
+	})
 }
 
 //func (this *ETCDServiceCenter) check(path, data interface{}) bool {
@@ -264,7 +265,10 @@ func (this *ETCDServiceCenter) AddDataPrefixListener(dataRootPath string, dataRo
 		}
 	}
 
-	go func() {
+	task.SafeGo(func() {
+		if err := recover(); err != nil {
+			exception.PrintStackDetail(err)
+		}
 		ch := this.client.Watch(context.TODO(), dataRootPath, clientv3.WithPrefix())
 		for {
 			//只要消息管道没有关闭，就一直等待用户请求
@@ -277,7 +281,7 @@ func (this *ETCDServiceCenter) AddDataPrefixListener(dataRootPath string, dataRo
 				}
 			}
 		}
-	}()
+	})
 	return nil
 }
 
@@ -324,7 +328,10 @@ func (this *ETCDServiceCenter) SubscribeData(path string, configHandler ConfigLi
 		}
 	}
 
-	go func() {
+	task.SafeGo(func() {
+		if err := recover(); err != nil {
+			exception.PrintStackDetail(err)
+		}
 		ch := this.client.Watch(context.TODO(), path)
 		for {
 			//只要消息管道没有关闭，就一直等待用户请求
@@ -339,7 +346,7 @@ func (this *ETCDServiceCenter) SubscribeData(path string, configHandler ConfigLi
 				}
 			}
 		}
-	}()
+	})
 }
 
 

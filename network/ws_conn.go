@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/KylinHe/aliensboot-core/log"
+	"github.com/KylinHe/aliensboot-core/task"
 	"github.com/gorilla/websocket"
 	"net"
-	"runtime"
 	"sync"
 )
 
@@ -26,15 +26,7 @@ func newWSConn(conn *websocket.Conn, pendingWriteNum int, maxMsgLen uint32) *WSC
 	wsConn.writeChan = make(chan []byte, pendingWriteNum)
 	wsConn.maxMsgLen = maxMsgLen
 
-	go func() {
-		defer func() {
-			if err := recover(); err != nil {
-				buf := make([]byte, 2048)
-				n := runtime.Stack(buf, false)
-				stackInfo := fmt.Sprintf("%s", buf[:n])
-				log.Errorf("panic stack info %s", stackInfo)
-			}
-		}()
+	task.SafeGo(func() {
 		for b := range wsConn.writeChan {
 			if b == nil {
 				break
@@ -50,7 +42,7 @@ func newWSConn(conn *websocket.Conn, pendingWriteNum int, maxMsgLen uint32) *WSC
 		wsConn.Lock()
 		wsConn.closeFlag = true
 		wsConn.Unlock()
-	}()
+	})
 
 	return wsConn
 }
