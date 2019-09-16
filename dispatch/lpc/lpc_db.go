@@ -18,6 +18,18 @@ import (
 var DBServiceProxy = &dbHandler{}
 
 type dbHandler struct {
+	copy bool
+}
+
+func (handler *dbHandler) SetDuplicateCopy(copy bool) {
+	handler.copy = copy
+}
+
+func (handler *dbHandler) Copy(data database2.IData) database2.IData {
+	if handler.copy {
+		return handler.Copy(data)
+	}
+	return data
 }
 
 func (handler *dbHandler) UpdateMulti(data []database2.IData, dbHandler database2.IDatabaseHandler) {
@@ -26,7 +38,7 @@ func (handler *dbHandler) UpdateMulti(data []database2.IData, dbHandler database
 		return
 	}
 	for _, d := range data {
-		handler.Update(d, dbHandler)
+		handler.Update(handler.Copy(d), dbHandler)
 	}
 }
 
@@ -37,25 +49,25 @@ func (handler *dbHandler) InsertMulti(data []database2.IData, dbHandler database
 	}
 	insertData := make([]interface{}, dataLen)
 	for i, d := range data {
-		insertData[i] = d.Copy()
+		insertData[i] = handler.Copy(d)
 	}
 	database.ChanRPC.Go(constant.DB_COMMAND_INSERT_MULTI, insertData, dbHandler)
 }
 
 func (handler *dbHandler) Insert(data database2.IData, dbHandler database2.IDatabaseHandler) {
-	database.ChanRPC.Go(constant.DB_COMMAND_INSERT, data.Copy(), dbHandler)
+	database.ChanRPC.Go(constant.DB_COMMAND_INSERT, handler.Copy(data), dbHandler)
 }
 
 func (handler *dbHandler) Update(data database2.IData, dbHandler database2.IDatabaseHandler) {
-	database.ChanRPC.Go(constant.DB_COMMAND_UPDATE, data.Copy(), dbHandler)
+	database.ChanRPC.Go(constant.DB_COMMAND_UPDATE, handler.Copy(data), dbHandler)
 }
 
 func (handler *dbHandler) ForceUpdate(data database2.IData, dbHandler database2.IDatabaseHandler) {
-	database.ChanRPC.Go(constant.DB_COMMAND_FUPDATE, data.Copy(), dbHandler)
+	database.ChanRPC.Go(constant.DB_COMMAND_FUPDATE, handler.Copy(data), dbHandler)
 }
 
 func (handler *dbHandler) Delete(data database2.IData, dbHandler database2.IDatabaseHandler) {
-	database.ChanRPC.Go(constant.DB_COMMAND_DELETE, data.Copy(), dbHandler)
+	database.ChanRPC.Go(constant.DB_COMMAND_DELETE, handler.Copy(data), dbHandler)
 }
 
 func (handler *dbHandler) UpdateCondition(collectionName string, selectDoc interface{}, updateDoc interface{}, dbHandler database2.IDatabaseHandler) {

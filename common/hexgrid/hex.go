@@ -10,14 +10,14 @@ type direction int
 const directionLen = 6
 
 
-//var directions = []Hex{
-//	NewHex(1, 0),
-//	NewHex(1, -1),
-//	NewHex(0, -1),
-//	NewHex(-1, 0),
-//	NewHex(-1, +1),
-//	NewHex(0, +1),
-//}
+var directions = []Hex{
+	NewHex(1, 0),
+	NewHex(1, -1),
+	NewHex(0, -1),
+	NewHex(-1, 0),
+	NewHex(-1, +1),
+	NewHex(0, +1),
+}
 
 
 const (
@@ -29,14 +29,14 @@ const (
 	directionS
 )
 
-var directions = []Hex{
-	NewHex(1, -1),
-	NewHex(1, 0),
-	NewHex(0, 1),
-	NewHex(-1, -1),
-	NewHex(-1, -1),
-	NewHex(0, -1),
-}
+//var directions = []Hex{
+//	NewHex(1, -1),
+//	NewHex(1, 0),
+//	NewHex(0, 1),
+//	NewHex(-1, 0),
+//	NewHex(-1, -1),
+//	NewHex(0, -1),
+//}
 //east  右 东
 //west  左 西
 //south 下 南
@@ -86,6 +86,18 @@ func NewHex(q, r int) Hex {
 	h := Hex{q: q, r: r, s: -q - r}
 	return h
 
+}
+
+func (h Hex) GetQ() int {
+	return h.q
+}
+
+func (h Hex) GetR() int {
+	return h.r
+}
+
+func (h Hex) GetS() int {
+	return h.s
 }
 
 func (h Hex) String() string {
@@ -208,10 +220,9 @@ func HexRange(center Hex, radius int) []Hex {
 	}
 
 	return results
-
 }
 
-func HexRing(center Hex, radius int) []Hex {
+func HexSingleRing(center Hex, radius int) []Hex {
 	var results = make([]Hex, 0)
 	cube := HexAdd(center, HexScale(center, radius))
 	for i:=0; i<directionLen; i++ {

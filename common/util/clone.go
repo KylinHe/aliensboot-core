@@ -2,6 +2,8 @@ package util
 
 // reference: https://github.com/mohae/deepcopy
 import (
+	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"reflect"
 )
@@ -49,6 +51,14 @@ func deepCopy(dst, src reflect.Value) {
 	default:
 		dst.Set(src)
 	}
+}
+
+func DeepCoderCopy(dst, src interface{}) error {
+	var buf bytes.Buffer
+	if err := gob.NewEncoder(&buf).Encode(src); err != nil {
+		return err
+	}
+	return gob.NewDecoder(bytes.NewBuffer(buf.Bytes())).Decode(dst)
 }
 
 func DeepCopy(dst, src interface{}) {
