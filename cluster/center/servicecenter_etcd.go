@@ -301,9 +301,19 @@ func (this *ETCDServiceCenter) handleService(eventType DataEventType, data []byt
 
 }
 
-func (this *ETCDServiceCenter) SubscribeConfig(configName string, configHandler ConfigListener) {
+func (this *ETCDServiceCenter) SubscribeConfig(configName string, configHandler ConfigListener, options ...Option) {
 	configPath := this.configRoot + NodeSplit + configName
-	this.SubscribeData(configPath, configHandler, true)
+	ensure := !haveOption(OptionEmpty, options)
+	this.SubscribeData(configPath, configHandler, ensure)
+}
+
+func haveOption(option Option, options []Option) bool {
+	for _, op := range options {
+		if op == option {
+			return true
+		}
+	}
+	return false
 }
 
 // 订阅前缀配置
@@ -347,6 +357,17 @@ func (this *ETCDServiceCenter) SubscribeData(path string, configHandler ConfigLi
 			}
 		}
 	})
+}
+
+func (this *ETCDServiceCenter) PublicConfigData(configName string, data interface{}) bool {
+	content, _ := json.Marshal(data)
+	result := this.PublicConfig(configName, content)
+	if result {
+		log.Debug("update maintain success : %v", data)
+	} else {
+		log.Debug("update maintain failed : %v", data)
+	}
+	return result
 }
 
 

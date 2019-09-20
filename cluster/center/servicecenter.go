@@ -96,6 +96,12 @@ type ConfigListener func(data []byte)
 type DataPrefixListener func(eventType DataEventType, data []byte, dataRootName string, dataName string)
 
 
+type Option int
+
+const (
+	OptionEmpty Option = 1 //允许远程没有配置
+)
+
 type ServiceCenter interface {
 
 	GetNodeID() string //获取当前节点id
@@ -108,7 +114,9 @@ type ServiceCenter interface {
 
 	PublicConfig(configName string, content []byte) bool        //发布配置
 
-	SubscribeConfig(configName string, listener ConfigListener) //订阅配置
+	PublicConfigData(configName string, data interface{}) bool        //发布配置
+
+	SubscribeConfig(configName string, listener ConfigListener, option ...Option) //订阅配置
 
 	SubscribeConfigWithPrefix(configName string, listener DataPrefixListener) //
 
