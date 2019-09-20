@@ -13,6 +13,7 @@ import "time"
 
 const (
 	DurationDay time.Duration = 24 * time.Hour
+	FormatDefaultLayout = "2006-01-02 15:04:05"
 )
 
 //获取当天开始时间
@@ -56,3 +57,10 @@ func GetSecondDurationInt64(second int64) time.Duration {
 	return time.Duration(second) * time.Second
 }
 
+func ParseTime(value string) time.Time {
+	t,err := time.Parse(FormatDefaultLayout,value)
+	if err != nil {
+		t = time.Time{}
+	}
+	return t
+}
