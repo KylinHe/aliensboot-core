@@ -164,7 +164,6 @@ func (this *GRPCService) Send(request *base.Any) error {
 	//	this.server.LocalRequest(request)
 	//	return nil
 	//}
-
 	if this.receiveClient == nil {
 		return errors.New("service is not initial")
 	}

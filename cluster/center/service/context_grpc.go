@@ -26,6 +26,22 @@ type Context struct {
 	autoResp bool // 自动响应请求
 }
 
+func (ctx *Context) GetAuthId() int64 {
+	return ctx.Request.AuthId
+}
+
+func (ctx *Context) GetGateID() string {
+	return ctx.Request.GateId
+}
+
+func (ctx *Context) GetHeader(key string) []byte {
+	return ctx.Request.GetHeaderByKey(key)
+}
+
+func (ctx *Context) GetHeaderStr(key string) string {
+	return ctx.Request.GetHeaderStrByKey(key)
+}
+
 // 上下验权通过
 func (ctx *Context) Auth(authID int64) {
 	ctx.Response.AuthId = authID

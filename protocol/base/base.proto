@@ -13,7 +13,8 @@ message Any {
     // Must be a valid serialized protocol buffer of the above specified type.
     bytes value = 4;
 
-    map<string,  bytes> metadata =  5;
+    // 头信息 附带数据
+    map<string,  bytes> header =  5;
 }
 
 //rpc 服务间转发
