@@ -19,7 +19,6 @@ type IDatabaseFactory interface {
 
 type IData interface {
 	GetDataId() interface{} //获取数据id 不能为指针
-	Copy() IData //支持拷贝
 }
 
 type Authority struct {

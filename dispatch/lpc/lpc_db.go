@@ -13,6 +13,7 @@ import (
 	database2 "github.com/KylinHe/aliensboot-core/database"
 	"github.com/KylinHe/aliensboot-core/module/database"
 	"github.com/KylinHe/aliensboot-core/module/database/constant"
+	"github.com/gogo/protobuf/proto"
 )
 
 var DBServiceProxy = &dbHandler{}
@@ -27,7 +28,7 @@ func (handler *dbHandler) SetDuplicateCopy(copy bool) {
 
 func (handler *dbHandler) Copy(data database2.IData) database2.IData {
 	if handler.copy {
-		return handler.Copy(data)
+		return proto.Clone(data.(proto.Message)).(database2.IData)
 	}
 	return data
 }
