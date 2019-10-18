@@ -55,6 +55,11 @@ func(container *TimerContainer) setGroupTimer(timerType TimerType, id interface{
 	group.Add(id, timer)
 }
 
+func(container *TimerContainer) getGroupTimer(timerType TimerType, id interface{}) *Timer {
+	group := container.ensureGetGroup(timerType)
+	return group.Get(id)
+}
+
 func(container *TimerContainer) CancelGroupTimer(timerType TimerType, id interface{}) {
 	group := container.groupMapping[timerType]
 	if group == nil {
@@ -112,6 +117,21 @@ func(container *TimerContainer) SetGroupTimestampTimer(timerType TimerType, id i
 	timer := container.manager.AddTimestampTimer(timestamp, duration, callback)
 	container.setGroupTimer(timerType, id, timer)
 }
+
+func(container *TimerContainer) UpdateGroupTimestampTimer(timerType TimerType, id interface{}, duration time.Duration, callback CallbackFunc) {
+	if container.filter[timerType] {
+		return
+	}
+	timer := container.getGroupTimer(timerType, id)
+	if timer != nil {
+		timer.interval = duration
+	} else {
+		timestamp := time.Now().Unix()+ int64(duration / time.Second)
+		timer = container.manager.AddTimestampTimer(timestamp, duration, callback)
+		container.setGroupTimer(timerType, id, timer)
+	}
+}
+
 
 
 func(container *TimerContainer) SetSingleTimer(timerType TimerType, duration time.Duration, callback CallbackFunc) {
