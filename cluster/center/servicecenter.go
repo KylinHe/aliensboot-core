@@ -130,6 +130,8 @@ type ServiceCenter interface {
 
 	GetService(serviceName string, serviceID string) service.IService //获取指定服务
 
+	GetAllServices() map[string]map[string]service.IService
+
 	AllocService(serviceName string, param string) service.IService   //按照负载均衡策略 分配一个可用的服务
 
 

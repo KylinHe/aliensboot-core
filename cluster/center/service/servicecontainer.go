@@ -150,6 +150,16 @@ func (this *Container) GetAllService(serviceType string) []IService {
 	return serviceCategory.getAllService()
 }
 
+func (this *Container) GetAllServices() map[string]map[string]IService {
+	this.RLock()
+	defer this.RUnlock()
+	result := make(map[string]map[string]IService, len(this.root))
+	for key, value := range this.root {
+		result[key] = value.services
+	}
+	return result
+}
+
 //func (this *Container) GetServiceInfo(serviceType string) []string {
 //	this.RLock()
 //	defer this.RUnlock()
