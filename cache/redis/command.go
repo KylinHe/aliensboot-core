@@ -54,6 +54,7 @@ const (
 	OP_H_DEL     string = "HDEL"
 	OP_H_HINCRBY string = "HINCRBY"
 	OP_H_EXISTS  string = "HEXISTS"
+	OP_H_LEN     string = "HLEN"
 
 	OP_L_PUSH  string = "LPUSH"
 	OP_R_PUSH  string = "RPUSH"

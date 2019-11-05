@@ -75,6 +75,14 @@ func (this *ETCDServiceCenter) ConnectCluster(config config.ClusterConfig) {
 	//go this.openTTLCheck()
 }
 
+func (this *ETCDServiceCenter) GetConfigRoot() string {
+	return this.configRoot
+}
+
+func (this *ETCDServiceCenter) GetServiceRoot() string {
+	return this.serviceRoot
+}
+
 func (this *ETCDServiceCenter) GetNodeID() string {
 	return this.node
 }
@@ -252,23 +260,16 @@ func (this *ETCDServiceCenter) SubscribeService(healthyOnly bool, serviceName st
 
 
 func (this *ETCDServiceCenter) AddDataPrefixListener(dataRootPath string, dataRootName string, handler DataPrefixListener) error {
-	prefixLen := len(dataRootPath)
-	rsp, err := this.client.Get(newTimeoutContext(), dataRootPath, clientv3.WithPrefix())
-	if err != nil {
-		return err
-	}
-	for _, v := range rsp.Kvs {
-		dataPath := string(v.Key)
-		dataName := dataPath[prefixLen:]
-		if dataName != "" {
-			handler(PUT, v.Value, dataRootName, dataName)
-		}
+	chidlrenData := this.GetChildrenData(dataRootPath)
+	for dataName, dataValue := range chidlrenData {
+		handler(PUT, dataValue, dataRootName, dataName)
 	}
 
 	task.SafeGo(func() {
 		if err := recover(); err != nil {
 			exception.PrintStackDetail(err)
 		}
+		prefixLen := len(dataRootPath)
 		ch := this.client.Watch(context.TODO(), dataRootPath, clientv3.WithPrefix())
 		for {
 			//只要消息管道没有关闭，就一直等待用户请求
@@ -361,30 +362,35 @@ func (this *ETCDServiceCenter) SubscribeData(path string, configHandler ConfigLi
 
 func (this *ETCDServiceCenter) PublicConfigData(configName string, data interface{}) bool {
 	content, _ := json.Marshal(data)
-	result := this.PublicConfig(configName, content)
-	if result {
-		log.Debug("update maintain success : %v", data)
-	} else {
-		log.Debug("update maintain failed : %v", data)
-	}
-	return result
+	return this.PublicConfig(configName, content)
 }
 
 
-func (this *ETCDServiceCenter) PublicConfig(configType string, configContent []byte) bool {
-	if configType == "" {
+func (this *ETCDServiceCenter) PublicConfig(configName string, configContent []byte) bool {
+	if configName == "" {
 		log.Info("config type con not be empty")
 		return false
 	}
-	configPath := this.configRoot + NodeSplit + configType
+	configPath := this.configRoot + NodeSplit + configName
+	return this.UploadData(configPath, configContent)
+}
 
-	_, err := this.client.Put(newTimeoutContext(), configPath, string(configContent))
+func (this *ETCDServiceCenter) GetChildrenData(path string) map[string][]byte {
+	result := make(map[string][]byte)
+	prefixLen := len(path)
+	rsp, err := this.client.Get(newTimeoutContext(), path, clientv3.WithPrefix())
 	if err != nil {
-		log.Errorf("public config %v  err : %v", configType, err)
-		return false
+		log.Errorf("download data %v error: %v", path, err)
+		return result
 	}
-	log.Infof("public config %v success", configType)
-	return true
+	for _, v := range rsp.Kvs {
+		dataPath := string(v.Key)
+		dataName := dataPath[prefixLen:]
+		if dataName != "" {
+			result[dataName] = v.Value
+		}
+	}
+	return result
 }
 
 //上传数据

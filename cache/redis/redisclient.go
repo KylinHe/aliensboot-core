@@ -23,10 +23,7 @@ type ErrorHandler func(err error, command string, args ...interface{})
 var ErrNil = redis.ErrNil
 
 type RedisCacheClient struct {
-	MaxIdle     int
-	MaxActive   int
-	Address     string
-	Password    string
+	config.CacheConfig
 	IdleTimeout time.Duration //180 * time.Second
 	pool        *redis.Pool
 	errorHandler ErrorHandler
@@ -43,10 +40,10 @@ type RedisCacheClient struct {
 
 func NewRedisClient(config config.CacheConfig) *RedisCacheClient {
 	if config.MaxActive == 0 {
-		config.MaxActive = 5000
+		config.MaxActive = 2000
 	}
 	if config.MaxIdle == 0 {
-		config.MaxIdle = 2000
+		config.MaxIdle = 500
 	}
 	if config.IdleTimeout == 0 {
 		config.IdleTimeout = 120
@@ -61,10 +58,7 @@ func NewRedisClient(config config.CacheConfig) *RedisCacheClient {
 	}
 
 	redisClient := &RedisCacheClient{
-		MaxIdle:     config.MaxIdle,
-		MaxActive:   config.MaxActive,
-		Address:     config.Address,
-		Password:    config.Password,
+		CacheConfig: config,
 		IdleTimeout: time.Duration(config.IdleTimeout) * time.Second,
 	}
 	return redisClient
@@ -75,6 +69,7 @@ func (this *RedisCacheClient) Start() {
 	this.pool = &redis.Pool{
 		MaxIdle:     this.MaxIdle,
 		MaxActive:   this.MaxActive,
+		Wait: this.Wait,
 		IdleTimeout: this.IdleTimeout, //空闲释放时间
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.Dial("tcp", this.Address)

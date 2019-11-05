@@ -112,6 +112,12 @@ type ServiceCenter interface {
 
 	IsConnect() bool
 
+	GetConfigRoot() string
+
+	GetServiceRoot() string
+
+	GetChildrenData(path string) map[string][]byte // 根据路径获取子节点名-数据
+
 	PublicConfig(configName string, content []byte) bool        //发布配置
 
 	PublicConfigData(configName string, data interface{}) bool        //发布配置

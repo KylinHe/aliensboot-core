@@ -35,6 +35,11 @@ func (this *RedisCacheClient) HGet(key interface{}, field string) (string, error
 	return redis.String(this.Do(OP_H_GET, key, field))
 }
 
+func (this *RedisCacheClient) HLen(key interface{}) (int, error) {
+
+	return redis.Int(this.Do(OP_H_LEN, key))
+}
+
 func (this *RedisCacheClient) HDel(key interface{}, field string) error {
 	
 	_, err := this.Do(OP_H_DEL, key, field)

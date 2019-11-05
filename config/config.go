@@ -22,6 +22,8 @@ var (
 	LenStackBuf = 4096
 
 	ModuleConfigRoot = ""
+
+	ConfigRoot = ""
 )
 
 type BaseConfig struct {
@@ -54,6 +56,7 @@ func (config ClusterConfig) IsValid() bool {
 }
 
 func Init(configPath string) *BaseConfig {
+	ConfigRoot = configPath
 	dir, _ := filepath.Abs(configPath)
 	//log.Debugf("configuration path is %v", dir)
 	ModuleConfigRoot = dir + string(filepath.Separator) + "modules" + string(filepath.Separator)
