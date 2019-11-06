@@ -105,6 +105,21 @@ func (this *Database) DropDatabase() error {
 	return err
 }
 
+func (this *Database) DropCollections() error {
+	s := this.dbContext.Ref()
+	defer this.dbContext.UnRef(s)
+	names, err := s.DB(this.dbName).CollectionNames()
+	if err != nil && this.errorHandler != nil {
+		this.errorHandler(err)
+	}
+	for _, name := range names {
+		if name != IdStore {
+			s.DB(this.dbName).C(name).DropCollection()
+		}
+	}
+	return err
+}
+
 func (this *Database) NextSeq(tableMeta *dbconfig.TableMeta) (int64, error) {
 	return this.dbContext.NextSeq(this.dbName, IdStore, tableMeta.Name)
 }
