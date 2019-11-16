@@ -60,7 +60,7 @@ type IDatabaseHandler interface {
 	DeleteAllCondition(data IData, selector interface{}) error
 	UpdateOne(data IData) error
 	ForceUpdateOne(data IData) error //强制更新。不存在就插入
-	Update(collection string, selector interface{}, update interface{}) error
+	UpdateOneCondition(data IData, selector interface{}, update interface{}) error
 }
 
 //type interface{} interface {

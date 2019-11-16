@@ -85,15 +85,6 @@ func (this *Database) SetErrorHandler(handler ErrorHandler)  {
 	this.errorHandler = handler
 }
 
-
-//原生的更新语句
-//TODO 需要拓展到内存映射修改，减少开发量
-func (this *Database) Update(collection string, selector interface{}, update interface{}) error {
-	s := this.dbContext.Ref()
-	defer s.Close()
-	return s.DB(this.dbName).C(collection).Update(selector, update)
-}
-
 //清除数据库
 func (this *Database) DropDatabase() error {
 	s := this.dbContext.Ref()

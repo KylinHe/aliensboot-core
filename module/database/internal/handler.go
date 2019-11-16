@@ -56,7 +56,7 @@ func forceUpdate(args []interface{}) {
 
 func conditionUpdate(args []interface{}) {
 	handler := args[3].(database.IDatabaseHandler)
-	err := handler.Update(args[0].(string), args[1], args[2])
+	err := handler.UpdateOneCondition(args[0].(database.IData), args[1], args[2])
 	debugLog("condition update", args[0], err)
 }
 

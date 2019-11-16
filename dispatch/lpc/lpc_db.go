@@ -71,6 +71,6 @@ func (handler *dbHandler) Delete(data database2.IData, dbHandler database2.IData
 	database.ChanRPC.Go(constant.DB_COMMAND_DELETE, handler.Copy(data), dbHandler)
 }
 
-func (handler *dbHandler) UpdateCondition(collectionName string, selectDoc interface{}, updateDoc interface{}, dbHandler database2.IDatabaseHandler) {
-	database.ChanRPC.Go(constant.DB_COMMAND_CONDITION_UPDATE, collectionName, selectDoc, updateDoc, dbHandler)
+func (handler *dbHandler) UpdateCondition(data database2.IData, selectDoc interface{}, updateDoc interface{}, dbHandler database2.IDatabaseHandler) {
+	database.ChanRPC.Go(constant.DB_COMMAND_CONDITION_UPDATE, data, selectDoc, updateDoc, dbHandler)
 }

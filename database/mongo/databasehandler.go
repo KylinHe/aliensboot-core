@@ -328,6 +328,14 @@ func (this *Database) UpdateOne(data database.IData) error {
 	})
 }
 
+//更新单条数据
+func (this *Database) UpdateOneCondition(data database.IData, selector interface{}, update interface{}) error {
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		return collection.Update(selector, update)
+	})
+}
+
+
 func (this *Database) ForceUpdateOne(data database.IData) error {
 	result, err := this.IDExist(data)
 	if err != nil {
