@@ -8,6 +8,7 @@ import (
 	"reflect"
 	//"strconv"
 	"strings"
+	"fmt"
 	//"time"
 	"github.com/KylinHe/aliensboot-core/database/dbconfig"
 	"github.com/pkg/errors"
@@ -178,6 +179,9 @@ func (this *Database) InsertMulti(datas []interface{}) error {
 
 func (this *Database) QueryAllLimit(data database.IData, result interface{}, limit int, callback func(interface{}) bool) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		if this.queryLimit != 0 && limit > this.queryLimit {
+			return errors.New(fmt.Sprint("invalid limit param %v, max %v", limit, this.queryLimit))
+		}
 		skip := 0
 		for {
 			err := collection.Find(nil).Limit(limit).Skip(skip).All(result)
@@ -240,6 +244,9 @@ func (this *Database) IDExist(data database.IData) (bool, error) {
 //按条件多条查询
 func (this *Database) QueryAllConditionLimit(data database.IData, condition string, value interface{}, result interface{}, limit int, callback func(interface{}) bool) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		//if this.queryLimit != 0 && limit > this.queryLimit {
+		//	return errors.New(fmt.Sprint("invalid limit param %v, max %v", limit, this.queryLimit))
+		//}
 		skip := 0
 		for {
 			err := collection.Find(bson.M{condition: value}).Limit(limit).Skip(skip).All(result)
@@ -257,18 +264,27 @@ func (this *Database) QueryAllConditionLimit(data database.IData, condition stri
 
 func (this *Database) QueryAllConditionsLimit(data database.IData, conditions map[string]interface{}, result interface{}, limit int, sort ...string) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		if this.queryLimit != 0 && limit > this.queryLimit {
+			return errors.New(fmt.Sprint("invalid limit param %v, max %v", limit, this.queryLimit))
+		}
 		return collection.Find(conditions).Sort(sort...).Limit(limit).All(result)
 	})
 }
 
 func (this *Database) QueryAllConditionSkipLimit(data database.IData, condition string, value interface{}, result interface{}, skip int, limit int, sort ...string) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		if this.queryLimit != 0 && limit > this.queryLimit {
+			return errors.New(fmt.Sprint("invalid limit param %v, max %v", limit, this.queryLimit))
+		}
 		return collection.Find(bson.M{condition: value}).Sort(sort...).Limit(limit).Skip(skip).All(result)
 	})
 }
 
 func (this *Database) QueryAllConditionsSkipLimit(data database.IData, conditions map[string]interface{}, result interface{}, skip int, limit int, sort ...string) error {
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		if this.queryLimit != 0 && limit > this.queryLimit {
+			return errors.New(fmt.Sprint("invalid limit param %v, max %v", limit, this.queryLimit))
+		}
 		return collection.Find(conditions).Sort(sort...).Limit(limit).Skip(skip).All(result)
 	})
 }

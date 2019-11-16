@@ -32,6 +32,8 @@ type Database struct {
 
 	errorHandler ErrorHandler
 
+	queryLimit int
+
 	tableMetas map[reflect.Type]*dbconfig.TableMeta
 }
 
@@ -63,8 +65,11 @@ func (this *Database) Init(config config.DBConfig) error {
 	if config.SocketTimeout <= 0 {
 		config.DialTimeout = 60
 	}
-
+	if config.QueryLimit == 0 {
+		config.QueryLimit = 50
+	}
 	this.dbName = config.Name
+	this.queryLimit = config.QueryLimit
 
 	c, err := Dial(config)
 	if err != nil {
@@ -72,11 +77,6 @@ func (this *Database) Init(config config.DBConfig) error {
 	}
 	this.tableMetas = make(map[reflect.Type]*dbconfig.TableMeta)
 	this.dbContext = c
-	//this.dbSession = this.dbContext.Ref()
-	//this.database = this.dbSession.DB(config.Name)
-	//if (this.auth != nil) {
-	//	return this.database.Login(this.auth.Username, this.auth.Password)
-	//}
 	return nil
 }
 
@@ -195,8 +195,4 @@ func (this *Database) Close() {
 	//	this.dbContext.UnRef(this.dbSession)
 	//}
 	this.dbContext.Close()
-}
-
-func (this *Database) GetHandler() database.IDatabaseHandler {
-	return this
 }

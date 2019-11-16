@@ -17,4 +17,5 @@ type DBConfig struct {
 	SocketTimeout int
 	SyncTimeout int 	//database session timeout (second)
 	Mode *int
+	QueryLimit int     //database query result max limit
 }
