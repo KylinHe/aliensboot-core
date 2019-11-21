@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"github.com/KylinHe/aliensboot-core/aliensboot"
 	"github.com/KylinHe/aliensboot-core/database"
 	"github.com/KylinHe/aliensboot-core/log"
 	"github.com/KylinHe/aliensboot-core/module/database/constant"
@@ -67,10 +66,8 @@ func conditionDelete(args []interface{}) {
 }
 
 func debugLog(opt string, data interface{}, err error) {
-	if aliensboot.IsDebug() {
-		if err != nil {
-			typeName := reflect.TypeOf(data).Name()
-			log.Debugf("[%v] %v err: %v", opt, typeName, err)
-		}
+	if err != nil {
+		typeName := reflect.TypeOf(data).Name()
+		log.Errorf("[%v] %v err: %v", opt, typeName, err)
 	}
 }

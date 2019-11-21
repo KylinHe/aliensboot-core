@@ -15,6 +15,7 @@ import (
 	"github.com/KylinHe/aliensboot-core/cluster/center"
 	"github.com/KylinHe/aliensboot-core/config"
 	"github.com/KylinHe/aliensboot-core/console"
+	"github.com/KylinHe/aliensboot-core/dispatch/lpc"
 	"github.com/KylinHe/aliensboot-core/log"
 	"github.com/KylinHe/aliensboot-core/module"
 	"io/ioutil"
@@ -59,6 +60,9 @@ func Run(mods ...module.Module) {
 		address := strings.Split(clusterAddress, ",")
 		baseConfig.Cluster.Servers = address
 	}
+
+	dataClone := os.Getenv("DataQueueClone")
+	lpc.DBServiceProxy.SetDuplicateCopy(dataClone == "true")
 
 	if baseConfig.Cluster.IsValid() {
 		center.ClusterCenter.ConnectCluster(baseConfig.Cluster)
