@@ -5,7 +5,7 @@ package ht
 
 import (
 	"errors"
-	"github.com/magicsea/ganet/data-structures/linked-list"
+	list "github.com/KylinHe/aliensboot-core/common/data_structures/linked-list"
 	"math"
 )
 

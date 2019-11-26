@@ -46,23 +46,23 @@ func (gate *Gate) Run(closeSig chan bool) {
 		}
 	}
 
-	var kcpServer *network.KCPServer
-	if gate.KcpConfig.Address != "" {
-		kcpServer = new(network.KCPServer)
-		kcpServer.KCPConfig = gate.KcpConfig
-		kcpServer.NewAgent = func(conn network.Conn) network.Agent {
-			a := &agent{conn: conn, gate: gate}
-			if gate.AgentChanRPC != nil {
-				gate.AgentChanRPC.Go("NewAgent", a)
-			}
-			return a
-		}
-
-	}
-
-	if kcpServer != nil {
-		kcpServer.Start()
-	}
+	//var kcpServer *network.KCPServer
+	//if gate.KcpConfig.Address != "" {
+	//	kcpServer = new(network.KCPServer)
+	//	kcpServer.KCPConfig = gate.KcpConfig
+	//	kcpServer.NewAgent = func(conn network.Conn) network.Agent {
+	//		a := &agent{conn: conn, gate: gate}
+	//		if gate.AgentChanRPC != nil {
+	//			gate.AgentChanRPC.Go("NewAgent", a)
+	//		}
+	//		return a
+	//	}
+	//
+	//}
+	//
+	//if kcpServer != nil {
+	//	kcpServer.Start()
+	//}
 
 	if wsServer != nil {
 		wsServer.Start()
@@ -71,9 +71,9 @@ func (gate *Gate) Run(closeSig chan bool) {
 		tcpServer.Start()
 	}
 	<-closeSig
-	if kcpServer != nil {
-		kcpServer.Close()
-	}
+	//if kcpServer != nil {
+	//	kcpServer.Close()
+	//}
 
 	if wsServer != nil {
 		wsServer.Close()
