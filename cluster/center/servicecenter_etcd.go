@@ -24,7 +24,7 @@ import (
 )
 
 type ETCDServiceCenter struct {
-	//sync.RWMutex
+	sync.RWMutex
 
 	*service.Container //服务容器 key 服务名
 	client             *clientv3.Client
@@ -92,6 +92,8 @@ func (this *ETCDServiceCenter) IsConnect() bool {
 }
 
 func (this *ETCDServiceCenter) Close() {
+	this.Lock()
+	defer this.Unlock()
 	if this.client != nil {
 		_ = this.client.Close()
 		this.client = nil
@@ -135,9 +137,11 @@ func (this *ETCDServiceCenter) PublicService(service service.IService, config co
 		return false
 	}
 
-	if config.Unique && len(rsp.Kvs) > 0 {
-		log.Errorf("unique service %v already exist.", service.GetName())
-		return false
+	if config.Unique {
+		if len(rsp.Kvs) > 0 {
+			log.Errorf("unique service %v already exist.", service.GetName())
+			return false
+		}
 	}
 
 	for _, v := range rsp.Kvs {
@@ -205,13 +209,17 @@ func (this *ETCDServiceCenter) openTTLCheck(path string, data string) {
 			select {
 			case <-ticker.C:
 				//this.ttlCheck.Range(this.check)
+				this.RLock()
 				resp, err := this.client.Grant(newTimeoutContext(), this.ttl)
+				this.RUnlock()
 				if err != nil {
 					log.Debugf("ttl grant %v", err)
 					continue
 				}
 				//log.Debugf("ttl updata %v - %v", path, data)
+				this.RLock()
 				_, err = this.client.Put(newTimeoutContext(), path, data, clientv3.WithLease(resp.ID))
+				this.RUnlock()
 				if err != nil {
 					log.Debugf("ttl update %v", err)
 				}
@@ -264,13 +272,12 @@ func (this *ETCDServiceCenter) AddDataPrefixListener(dataRootPath string, dataRo
 	for dataName, dataValue := range chidlrenData {
 		handler(PUT, dataValue, dataRootName, dataName)
 	}
-
+	ch := this.client.Watch(context.TODO(), dataRootPath, clientv3.WithPrefix())
 	task.SafeGo(func() {
 		if err := recover(); err != nil {
 			exception.PrintStackDetail(err)
 		}
 		prefixLen := len(dataRootPath)
-		ch := this.client.Watch(context.TODO(), dataRootPath, clientv3.WithPrefix())
 		for {
 			//只要消息管道没有关闭，就一直等待用户请求
 			event, _ := <-ch
@@ -338,12 +345,11 @@ func (this *ETCDServiceCenter) SubscribeData(path string, configHandler ConfigLi
 			configHandler(v.Value)
 		}
 	}
-
+	ch := this.client.Watch(context.TODO(), path)
 	task.SafeGo(func() {
 		if err := recover(); err != nil {
 			exception.PrintStackDetail(err)
 		}
-		ch := this.client.Watch(context.TODO(), path)
 		for {
 			//只要消息管道没有关闭，就一直等待用户请求
 			event, _ := <-ch
