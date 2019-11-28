@@ -137,17 +137,14 @@ func (this *ETCDServiceCenter) PublicService(service service.IService, config co
 		return false
 	}
 
-	if config.Unique {
-		if len(rsp.Kvs) > 0 {
-			log.Errorf("unique service %v already exist.", service.GetName())
-			return false
-		}
-	}
-
 	for _, v := range rsp.Kvs {
 		path := string(v.Key)
+		if config.Unique && serviceRootPath != path {
+			log.Errorf("unique service %v - %v already exist.", service.GetName(), path)
+			return false
+		}
 		if servicePath == path {
-			log.Errorf("service %v - %v already exist.", service.GetName(), servicePath)
+			log.Errorf("service %v - %v already exist.", service.GetName(), path)
 			return false
 		}
 	}
