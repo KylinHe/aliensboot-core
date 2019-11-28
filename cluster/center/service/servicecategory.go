@@ -44,7 +44,7 @@ func (this *serviceCategory) setLbs(lbsStr string) {
 	if this.lbs == nil || reflect.TypeOf(this.lbs) != reflect.TypeOf(newLbs) {
 		this.lbs = newLbs
 		this.lbsName = lbsStr
-		log.Debugf("[lbs-%v] init %v", this.lbsName, this.category)
+		// log.Debugf("[lbs-%v] init %v", this.lbsName, this.category)
 		for serviceId, _ := range this.services {
 			this.handleAddNode(serviceId)
 		}
@@ -160,12 +160,12 @@ func (this *serviceCategory) removeService(serviceID string) {
 
 func (this *serviceCategory) handleRemoveNode(serviceID string) {
 	this.lbs.RemoveNode(serviceID)
-	log.Debugf("[lbs-%v] remove node %v-%v", this.lbsName, this.category, serviceID)
+	// log.Debugf("[lbs-%v] remove node %v-%v", this.lbsName, this.category, serviceID)
 }
 
 func (this *serviceCategory) handleAddNode(serviceID string) {
 	this.lbs.AddNode(serviceID, 1)
-	log.Debugf("[lbs-%v] add node %v-%v", this.lbsName, this.category, serviceID)
+	// log.Debugf("[lbs-%v] add node %v-%v", this.lbsName, this.category, serviceID)
 }
 
 //func (this *serviceCategory) getNodes() []string {
