@@ -120,6 +120,8 @@ type ServiceCenter interface {
 
 	PublicConfig(configName string, content []byte) bool        //发布配置
 
+	DeleteConfig(configName string) bool        //删除配置
+
 	PublicConfigData(configName string, data interface{}) bool        //发布配置
 
 	SubscribeConfig(configName string, listener ConfigListener, option ...Option) //订阅配置

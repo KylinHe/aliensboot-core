@@ -368,6 +368,10 @@ func (this *ETCDServiceCenter) PublicConfigData(configName string, data interfac
 	return this.PublicConfig(configName, content)
 }
 
+func (this *ETCDServiceCenter) DeleteConfig(configName string) bool {
+	configPath := this.configRoot + NodeSplit + configName
+	return this.DeleteData(configPath)
+}
 
 func (this *ETCDServiceCenter) PublicConfig(configName string, configContent []byte) bool {
 	if configName == "" {
@@ -404,6 +408,16 @@ func (this *ETCDServiceCenter) UploadData(path string, configContent []byte) boo
 		return false
 	}
 	log.Infof("upload data %v success", path)
+	return true
+}
+
+func (this *ETCDServiceCenter) DeleteData(path string) bool {
+	_, err := this.client.Delete(newTimeoutContext(), path)
+	if err != nil {
+		log.Errorf("delete data %v failed err : %v", path, err)
+		return false
+	}
+	log.Infof("delete data %v success", path)
 	return true
 }
 
