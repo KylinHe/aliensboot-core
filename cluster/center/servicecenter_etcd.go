@@ -252,7 +252,7 @@ func (this *ETCDServiceCenter) GetServiceRootPath(service string) string {
 }
 
 func (this *ETCDServiceCenter) SubscribeService(healthyOnly bool, serviceName string) {
-	this.SubscribeData(this.GetServiceRootPath(serviceName), func(data []byte) {
+	this.SubscribeData(this.GetServiceRootPath(serviceName), func(data []byte, init bool) {
 		this.Container.SetLbs(serviceName, string(data))
 	}, false)
 
@@ -267,7 +267,7 @@ func (this *ETCDServiceCenter) SubscribeService(healthyOnly bool, serviceName st
 func (this *ETCDServiceCenter) AddDataPrefixListener(dataRootPath string, dataRootName string, handler DataPrefixListener) error {
 	chidlrenData := this.GetChildrenData(dataRootPath)
 	for dataName, dataValue := range chidlrenData {
-		handler(PUT, dataValue, dataRootName, dataName)
+		handler(PUT, dataValue, dataRootName, dataName, true)
 	}
 	ch := this.client.Watch(context.TODO(), dataRootPath, clientv3.WithPrefix())
 	task.SafeGo(func() {
@@ -282,7 +282,7 @@ func (this *ETCDServiceCenter) AddDataPrefixListener(dataRootPath string, dataRo
 				dataPath := string(dataEvent.Kv.Key)
 				dataName := dataPath[prefixLen:]
 				if dataName != "" {
-					handler(DataEventType(dataEvent.Type), dataEvent.Kv.Value, dataRootName, dataName)
+					handler(DataEventType(dataEvent.Type), dataEvent.Kv.Value, dataRootName, dataName, false)
 				}
 			}
 		}
@@ -290,7 +290,7 @@ func (this *ETCDServiceCenter) AddDataPrefixListener(dataRootPath string, dataRo
 	return nil
 }
 
-func (this *ETCDServiceCenter) handleService(eventType DataEventType, data []byte, dataRootName string, dataName string) {
+func (this *ETCDServiceCenter) handleService(eventType DataEventType, data []byte, dataRootName string, dataName string, init bool) {
 	if eventType == PUT {
 		centerService := &service.CenterService{}
 		err1 := json.Unmarshal(data, centerService)
@@ -306,7 +306,7 @@ func (this *ETCDServiceCenter) handleService(eventType DataEventType, data []byt
 
 }
 
-func (this *ETCDServiceCenter) SubscribeConfig(configName string, configHandler ConfigListener, options ...Option) {
+func (this *ETCDServiceCenter) SubscribeConfig(configName string, configHandler DataListener, options ...Option) {
 	configPath := this.configRoot + NodeSplit + configName
 	ensure := !haveOption(OptionEmpty, options)
 	this.SubscribeData(configPath, configHandler, ensure)
@@ -331,7 +331,7 @@ func (this *ETCDServiceCenter) SubscribeConfigWithPrefix(configName string, list
 }
 
 
-func (this *ETCDServiceCenter) SubscribeData(path string, configHandler ConfigListener, ensure bool) {
+func (this *ETCDServiceCenter) SubscribeData(path string, configHandler DataListener, ensure bool) {
 	rsp, err := this.client.Get(newTimeoutContext(), path)
 	if err != nil || rsp.Kvs == nil{
 		if ensure {
@@ -339,7 +339,7 @@ func (this *ETCDServiceCenter) SubscribeData(path string, configHandler ConfigLi
 		}
 	} else {
 		for _, v := range rsp.Kvs {
-			configHandler(v.Value)
+			configHandler(v.Value, true)
 		}
 	}
 	ch := this.client.Watch(context.TODO(), path)
@@ -355,7 +355,7 @@ func (this *ETCDServiceCenter) SubscribeData(path string, configHandler ConfigLi
 					if serviceEvent.Kv.Value == nil || len(serviceEvent.Kv.Value) == 0 {
 						log.Errorf("invalid config %v", path)
 					} else {
-						configHandler(serviceEvent.Kv.Value)
+						configHandler(serviceEvent.Kv.Value, false)
 					}
 				}
 			}

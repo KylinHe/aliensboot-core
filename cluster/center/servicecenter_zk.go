@@ -223,7 +223,7 @@ package center
 //}
 //
 ////订阅服务  能实时更新服务信息
-//func (this *ZKServiceCenter) SubscribeConfig(configName string, configHandler ConfigListener) {
+//func (this *ZKServiceCenter) SubscribeConfig(configName string, configHandler DataListener) {
 //	this.assert()
 //	path := this.configRoot + NodeSplit + configName
 //	this.confirmNode(path)

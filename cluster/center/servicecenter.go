@@ -90,10 +90,10 @@ func ReleaseService(service service.IService) {
 	}
 }
 
-type ConfigListener func(data []byte)
+type DataListener func(data []byte, init bool)
 
 //
-type DataPrefixListener func(eventType DataEventType, data []byte, dataRootName string, dataName string)
+type DataPrefixListener func(eventType DataEventType, data []byte, dataRootName string, dataName string, init bool)
 
 
 type Option int
@@ -124,7 +124,7 @@ type ServiceCenter interface {
 
 	PublicConfigData(configName string, data interface{}) bool        //发布配置
 
-	SubscribeConfig(configName string, listener ConfigListener, option ...Option) //订阅配置
+	SubscribeConfig(configName string, listener DataListener, option ...Option) //订阅配置
 
 	SubscribeConfigWithPrefix(configName string, listener DataPrefixListener) //
 
