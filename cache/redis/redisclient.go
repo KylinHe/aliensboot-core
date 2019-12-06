@@ -179,6 +179,12 @@ func (this *RedisCacheClient) Expire(key string, seconds int) error {
 	return err
 }
 
+func (this *RedisCacheClient) Ttl(key string) (int, error) {
+
+	return redis.Int(this.Do(OP_TTL, key))
+}
+
+
 //添加数据
 func (this *RedisCacheClient) SetData(key string, value interface{}) error {
 	

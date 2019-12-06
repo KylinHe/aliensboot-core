@@ -15,6 +15,9 @@ type Command struct {
 
 //操作类型
 const (
+	TTL_VALUE_FOREVER int = -1
+	TTL_VALUE_NOTFOUND int = -2
+
 	PARAM_WITHSCORES string = "WITHSCORES"
 	PARAM_LIMIT      string = "limit"
 	PARAM_Z_MAX      string = "+inf"
@@ -43,6 +46,8 @@ const (
 	OP_DECR   string = "DECR" //自减
 
 	OP_EXPIRE string = "EXPIRE"
+	OP_TTL string = "TTL"
+
 
 	OP_FLUSHALL string = "FLUSHALL"
 
