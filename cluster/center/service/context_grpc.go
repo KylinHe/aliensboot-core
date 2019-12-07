@@ -3,73 +3,95 @@ package service
 import (
 	"errors"
 	"github.com/KylinHe/aliensboot-core/protocol/base"
-	"github.com/gogo/protobuf/proto"
 )
 
-func newContext(request *base.Any, server base.RPCService_RequestServer) *Context {
-	return &Context{
-		Request:request,
-		Response:&base.Any{Id:request.Id},
-		server:server,
-		autoResp:true,
+func newContext(request *base.Any, server base.RPCService_RequestServer, msgProcessor Processor) (*Context, error) {
+	requestProxy, err := msgProcessor.Decode(request.Value)
+	if err != nil {
+		return nil, err
 	}
+	responseProxy, err := msgProcessor.NewResponseData()
+	if err != nil {
+		return nil, err
+	}
+	return &Context{
+		Request: requestProxy,
+		Response: responseProxy,
+		request:request,
+		response:&base.Any{Id:request.Id},
+		server:server,
+		msgProcessor:msgProcessor,
+	}, nil
 }
 
 type Context struct {
 
-	Request *base.Any  // 请求消息
+	Request interface{}
 
-	Response *base.Any  // 响应消息
+	Response interface{}
+
+	request *base.Any  // 请求消息
+
+	response *base.Any  // 响应消息
 
 	server base.RPCService_RequestServer // 写消息句柄
 
-	autoResp bool // 自动响应请求
+	msgProcessor Processor // 消息编解码器
+
+	//autoResp bool // 自动响应请求
 }
 
+// 获取消息id
+func (ctx *Context) GetMsgId() uint16 {
+	return ctx.request.Id
+}
+
+// 获取序号id
+func (ctx *Context) GetSeqId() uint32 {
+	return ctx.request.SeqId
+}
+
+// 获取权限id
 func (ctx *Context) GetAuthId() int64 {
-	return ctx.Request.AuthId
+	return ctx.request.AuthId
 }
 
+// 获取网关id
 func (ctx *Context) GetGateID() string {
-	return ctx.Request.GateId
+	return ctx.request.GateId
 }
 
 func (ctx *Context) GetHeader(key string) []byte {
-	return ctx.Request.GetHeaderByKey(key)
+	return ctx.request.GetHeaderByKey(key)
 }
 
 func (ctx *Context) GetHeaderStr(key string) string {
-	return ctx.Request.GetHeaderStrByKey(key)
+	return ctx.request.GetHeaderStrByKey(key)
 }
 
 // 上下验权通过
 func (ctx *Context) Auth(authID int64) {
-	ctx.Response.AuthId = authID
+	ctx.response.AuthId = authID
 }
 
-func (ctx *Context) SetAutoResp(auto bool) {
-	ctx.autoResp = auto
-}
+//func (ctx *Context) SetAutoResp(auto bool) {
+//	ctx.autoResp = auto
+//}
+//
+//func (ctx *Context) IsAutoResp() bool {
+//	return ctx.autoResp
+//}
 
-func (ctx *Context) IsAutoResp() bool {
-	return ctx.autoResp
-}
-
-// 响应proto消息
-func (ctx *Context) GOGOProto(msg proto.Message) error {
-	if msg == nil {
-		return errors.New("msg can not be nil")
-	}
+// 响应消息
+func (ctx *Context) WriteResponse() error {
 	if ctx.server == nil {
 		return errors.New("server not initial")
 	}
-	data, err := proto.Marshal(msg)
+	data , err := ctx.msgProcessor.Encode(ctx.Response)
 	if err != nil {
 		return err
 	}
-	//any := &base.Any{}
-	ctx.Response.Value = data
-	// ctx.Response.AuthId = ctx.authID
-	return ctx.server.Send(ctx.Response)
+	ctx.response.Value = data
+	return ctx.server.Send(ctx.response)
 }
 

@@ -4,17 +4,19 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 message Any {
 
-    uint32 id = 1[(gogoproto.customtype) = "uint16",(gogoproto.nullable) = false]; //消息id
+    uint32 id = 1[(gogoproto.customtype) = "uint16",(gogoproto.nullable) = false]; // 消息id
 
-    int64 auth_id = 2; //验权id 服务器内部透传,玩家在登录成功后发送的验权id
+    uint32 seqId = 2; // 消息序号id
 
-    string gate_id = 3; //dispatch cluster unique gate service node id
+    int64 authId = 3; //验权id 服务器内部透传,玩家在登录成功后发送的验权id
+
+    string gateId = 4; //dispatch cluster unique gate service node id
 
     // Must be a valid serialized protocol buffer of the above specified type.
-    bytes value = 4;
+    bytes value = 5;
 
-    // 头信息 附带数据
-    map<string,  bytes> header =  5;
+    // 头信息 扩展数据
+    map<string,  bytes> header =  6;
 }
 
 //rpc 服务间转发

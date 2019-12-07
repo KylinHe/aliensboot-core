@@ -25,13 +25,19 @@ const (
 	commandReceive   = "receive"
 )
 
+type Processor interface {
+	NewResponseData() (interface{}, error)
+	Decode(buf []byte) (interface{}, error)
+	Encode(data interface{}) ([]byte, error)
+}
 
 type handler func(ctx *Context)
 
-func NewRpcHandler(chanRpc *chanrpc.Server, handler handler) *rpcServer {
+func NewRpcHandler(chanRpc *chanrpc.Server, handler handler, msgProcessor Processor) *rpcServer {
 	service := &rpcServer{}
 	service.chanRpc = chanRpc
 	service.handler = handler
+	service.msgProcessor = msgProcessor
 
 	if chanRpc != nil {
 		chanRpc.Register(commandRequest, service.request)
@@ -46,6 +52,7 @@ type rpcServer struct {
 	suspended bool
 	//启动服务参数
 	server *grpc.Server //
+	msgProcessor Processor
 }
 
 func (this *rpcServer) start(name string, port int) bool {
@@ -88,7 +95,10 @@ func (this *rpcServer) receive(args []interface{}) {
 
 
 func (this *rpcServer) Request(request *base.Any, server base.RPCService_RequestServer) error {
-	ctx := newContext(request, server)
+	ctx, err := newContext(request, server, this.msgProcessor)
+	if err != nil {
+		return err
+	}
 	if this.chanRpc != nil {
 		return this.chanRpc.Call0(commandRequest, ctx, request)
 		//this.chanRpc.Go(commandRequest, ctx)
@@ -108,7 +118,10 @@ func (this *rpcServer) Receive(server base.RPCService_ReceiveServer) error {
 		if err != nil {
 			return err
 		}
-		ctx := newContext(request, nil)
+		ctx, err := newContext(request, nil, this.msgProcessor)
+		if err != nil {
+			return err
+		}
 		if this.chanRpc != nil {
 			this.chanRpc.Go(commandReceive, ctx)
 		} else {
