@@ -1,27 +1,16 @@
 package service
 
 import (
-	"errors"
 	"github.com/KylinHe/aliensboot-core/protocol/base"
 )
 
-func newContext(request *base.Any, server base.RPCService_RequestServer, msgProcessor Processor) (*Context, error) {
-	requestProxy, err := msgProcessor.Decode(request.Value)
-	if err != nil {
-		return nil, err
-	}
-	responseProxy, err := msgProcessor.NewResponseData()
-	if err != nil {
-		return nil, err
-	}
+func newContext(request *base.Any, requestProxy interface{}, responseProxy interface{}) *Context {
 	return &Context{
 		Request: requestProxy,
 		Response: responseProxy,
 		request:request,
 		response:&base.Any{Id:request.Id},
-		server:server,
-		msgProcessor:msgProcessor,
-	}, nil
+	}
 }
 
 type Context struct {
@@ -34,11 +23,7 @@ type Context struct {
 
 	response *base.Any  // 响应消息
 
-	server base.RPCService_RequestServer // 写消息句柄
-
-	msgProcessor Processor // 消息编解码器
-
-	//autoResp bool // 自动响应请求
+	ret bool
 }
 
 // 获取消息id
@@ -71,7 +56,9 @@ func (ctx *Context) GetHeaderStr(key string) string {
 
 // 上下验权通过
 func (ctx *Context) Auth(authID int64) {
-	ctx.response.AuthId = authID
+	if ctx.response != nil {
+		ctx.response.AuthId = authID
+	}
 }
 
 //func (ctx *Context) SetAutoResp(auto bool) {
@@ -83,15 +70,16 @@ func (ctx *Context) Auth(authID int64) {
 //}
 
 // 响应消息
-func (ctx *Context) WriteResponse() error {
-	if ctx.server == nil {
-		return errors.New("server not initial")
-	}
-	data , err := ctx.msgProcessor.Encode(ctx.Response)
-	if err != nil {
-		return err
-	}
-	ctx.response.Value = data
-	return ctx.server.Send(ctx.response)
+func (ctx *Context) WriteResponse() {
+	ctx.ret = true
+	//if ctx.server == nil {
+	//	return errors.New("server not initial")
+	//}
+	//data , err := ctx.msgProcessor.Encode(ctx.Response)
+	//if err != nil {
+	//	return err
+	//}
+	//ctx.response.Value = data
+	//return ctx.server.Send(ctx.response)
 }
 

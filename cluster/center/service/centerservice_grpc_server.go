@@ -95,15 +95,25 @@ func (this *rpcServer) receive(args []interface{}) {
 
 
 func (this *rpcServer) Request(request *base.Any, server base.RPCService_RequestServer) error {
-	ctx, err := newContext(request, server, this.msgProcessor)
+	ctx, err := this.newContext(request)
 	if err != nil {
 		return err
 	}
 	if this.chanRpc != nil {
-		return this.chanRpc.Call0(commandRequest, ctx, request)
-		//this.chanRpc.Go(commandRequest, ctx)
+		err := this.chanRpc.Call0(commandRequest, ctx, request)
+		if err != nil {
+			return err
+		}
 	} else {
 		this.handler(ctx)
+	}
+	if ctx.ret {
+		data , err := this.msgProcessor.Encode(ctx.Response)
+		if err != nil {
+			return err
+		}
+		ctx.response.Value = data
+		server.Send(ctx.response)
 	}
 	return nil
 }
@@ -118,7 +128,7 @@ func (this *rpcServer) Receive(server base.RPCService_ReceiveServer) error {
 		if err != nil {
 			return err
 		}
-		ctx, err := newContext(request, nil, this.msgProcessor)
+		ctx, err := this.newContext(request)
 		if err != nil {
 			return err
 		}
@@ -129,4 +139,17 @@ func (this *rpcServer) Receive(server base.RPCService_ReceiveServer) error {
 		}
 	}
 	return nil
+}
+
+func (this *rpcServer) newContext(request *base.Any) (*Context, error) {
+	requestProxy, err := this.msgProcessor.Decode(request.Value)
+	if err != nil {
+		return nil, err
+	}
+	responseProxy, err := this.msgProcessor.NewResponseData()
+	if err != nil {
+		return nil, err
+	}
+	ctx := newContext(request, requestProxy, responseProxy)
+	return ctx, nil
 }
