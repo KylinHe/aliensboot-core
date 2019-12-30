@@ -124,6 +124,8 @@ type ServiceCenter interface {
 
 	PublicConfigData(configName string, data interface{}) bool        //发布配置
 
+	GetConfigData(configName string) []byte //获取配置数据
+
 	SubscribeConfig(configName string, listener DataListener, option ...Option) //订阅配置
 
 	SubscribeConfigWithPrefix(configName string, listener DataPrefixListener) //

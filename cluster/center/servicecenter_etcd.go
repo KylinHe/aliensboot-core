@@ -312,6 +312,12 @@ func (this *ETCDServiceCenter) SubscribeConfig(configName string, configHandler 
 	this.SubscribeData(configPath, configHandler, ensure)
 }
 
+func (this *ETCDServiceCenter) GetConfigData(configName string) []byte {
+	configPath := this.configRoot + NodeSplit + configName
+	return this.DownloadData(configPath)
+}
+
+
 func haveOption(option Option, options []Option) bool {
 	for _, op := range options {
 		if op == option {
