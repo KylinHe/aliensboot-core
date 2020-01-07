@@ -61,6 +61,7 @@ type IDatabaseHandler interface {
 	UpdateOne(data IData) error
 	ForceUpdateOne(data IData) error //强制更新。不存在就插入
 	UpdateOneCondition(data IData, selector interface{}, update interface{}) error
+	UpdateAllCondition(data IData, selector interface{}, update interface{}) error
 }
 
 //type interface{} interface {

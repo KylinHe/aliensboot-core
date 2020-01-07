@@ -351,6 +351,13 @@ func (this *Database) UpdateOneCondition(data database.IData, selector interface
 	})
 }
 
+func (this *Database) UpdateAllCondition(data database.IData, selector interface{}, update interface{}) error {
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		_, err := collection.UpdateAll(selector, update)
+		return err
+	})
+}
+
 
 func (this *Database) ForceUpdateOne(data database.IData) error {
 	result, err := this.IDExist(data)
