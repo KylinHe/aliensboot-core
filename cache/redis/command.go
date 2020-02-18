@@ -47,6 +47,7 @@ const (
 
 	OP_EXPIRE string = "EXPIRE"
 	OP_TTL string = "TTL"
+	OP_SCAN    string = "SCAN"
 
 
 	OP_FLUSHALL string = "FLUSHALL"

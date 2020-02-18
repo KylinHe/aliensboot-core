@@ -202,6 +202,29 @@ func (this *RedisCacheClient) Decr(key string) (int, error) {
 	return redis.Int(this.Do(OP_DECR, key))
 }
 
+func (this *RedisCacheClient) Scan(cursor int, match interface{},count int) (int, []string, error) {
+	var result []string
+	value, err := redis.Values(this.Do(OP_SCAN, cursor, "MATCH", match, "COUNT",count))
+	if err != nil {
+		return cursor,result,err
+	}
+	for i, v := range value {
+		if i == 0 {	// idx0 是当前游标
+			cursor,err = redis.Int(v,err)
+			if err != nil {
+				continue
+			}
+		} else {	// idx1 是数值,需要获取的结果
+			values,err := redis.Strings(v,err)
+			if err != nil {
+				continue
+			}
+			result = append(result,values...)
+		}
+	}
+	return cursor,result, nil
+}
+
 func (this *RedisCacheClient) SelectDB(dbNumber int) error {
 	
 	_, err := this.Do(OP_SELECT, dbNumber)

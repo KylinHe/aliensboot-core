@@ -160,6 +160,13 @@ func (this *Database) Insert(data database.IData) error {
 	})
 }
 
+//强制插入 不做id自增长
+func (this *Database) ForceInsert(data database.IData) error {
+	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
+		return collection.Insert(data)
+	})
+}
+
 func (this *Database) InsertMulti(datas []interface{}) error {
 	if datas == nil || len(datas) == 0 {
 		return nil
