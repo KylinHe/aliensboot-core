@@ -53,6 +53,7 @@ type Skeleton struct {
 	client             *chanrpc.Client
 	server             *chanrpc.Server
 	commandServer      *chanrpc.Server
+	block bool // 关闭的时候是否阻塞到消息队列处理完毕
 
 	ticker <-chan time.Time
 	tick   func()
@@ -80,6 +81,10 @@ func (s *Skeleton) Init() {
 	s.commandServer = chanrpc.NewServer(0)
 }
 
+func (s *Skeleton) SetBlock(block bool) {
+	s.block = block
+}
+
 func (s *Skeleton) SetTick(tick func()) {
 	s.tick = tick
 }
@@ -88,9 +93,15 @@ func (s *Skeleton) Run(closeSig chan bool) {
 	for {
 		select {
 		case <-closeSig:
-			s.commandServer.Close()
-			s.server.Close()
-
+			if s.block {
+				for !s.server.Idle() || !s.commandServer.Idle() {
+					s.server.Close()
+					s.commandServer.Close()
+				}
+			} else {
+				s.server.Close()
+				s.commandServer.Close()
+			}
 			for !s.g.Idle() || !s.client.Idle() {
 				s.g.Close()
 				s.client.Close()

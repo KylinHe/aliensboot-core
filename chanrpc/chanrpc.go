@@ -169,6 +169,13 @@ func (s *Server) Close() {
 	}
 }
 
+// is channel idea
+func (s *Server) Idle() bool {
+	return len(s.ChanCall) == 0
+}
+
+
+
 // goroutine safe
 func (s *Server) Open(l int) *Client {
 	c := NewClient(l)

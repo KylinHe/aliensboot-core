@@ -194,5 +194,5 @@ func (this *Database) Close() {
 	//if this.dbSession != nil {
 	//	this.dbContext.UnRef(this.dbSession)
 	//}
-	this.dbContext.Close()
+	//this.dbContext.Close()
 }

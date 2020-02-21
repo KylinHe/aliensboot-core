@@ -22,6 +22,8 @@ func (m *Module) GetConfig() interface{} {
 }
 
 func (m *Module) OnInit() {
+	// 需要阻塞要队列处理完毕
+	skeleton.SetBlock(true)
 	m.Skeleton = skeleton
 
 }

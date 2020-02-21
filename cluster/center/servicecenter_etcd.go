@@ -207,20 +207,18 @@ func (this *ETCDServiceCenter) openTTLCheck(path string, data string) {
 			case <-ticker.C:
 				//this.ttlCheck.Range(this.check)
 				this.RLock()
-				resp, err := this.client.Grant(newTimeoutContext(), this.ttl)
-				this.RUnlock()
-				if err != nil {
-					log.Debugf("ttl grant %v", err)
-					continue
+				if this.client != nil {
+					resp, err := this.client.Grant(newTimeoutContext(), this.ttl)
+					if err != nil {
+						log.Debugf("ttl grant %v", err)
+					} else {
+						_, err = this.client.Put(newTimeoutContext(), path, data, clientv3.WithLease(resp.ID))
+						if err != nil {
+							log.Debugf("ttl update %v", err)
+						}
+					}
 				}
-				//log.Debugf("ttl updata %v - %v", path, data)
-				this.RLock()
-				_, err = this.client.Put(newTimeoutContext(), path, data, clientv3.WithLease(resp.ID))
 				this.RUnlock()
-				if err != nil {
-					log.Debugf("ttl update %v", err)
-				}
-
 			}
 		}
 	})

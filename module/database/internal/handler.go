@@ -67,7 +67,7 @@ func conditionDelete(args []interface{}) {
 
 func debugLog(opt string, data interface{}, err error) {
 	if err != nil {
-		typeName := reflect.TypeOf(data).Name()
+		typeName := reflect.TypeOf(data).String()
 		log.Errorf("[%v] %v err: %v", opt, typeName, err)
 	}
 }
