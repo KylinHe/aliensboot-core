@@ -155,7 +155,6 @@ func (this *Database) Insert(data database.IData) error {
 			}
 			reflect.ValueOf(data).Elem().FieldByName(tableMeta.IDName).SetInt(newId)
 		}
-
 		return collection.Insert(data)
 	})
 }
@@ -173,13 +172,6 @@ func (this *Database) InsertMulti(datas []interface{}) error {
 	}
 	data := datas[0].(database.IData)
 	return this.Ref(data, func(tableMeta *dbconfig.TableMeta, collection *mgo.Collection) error {
-		if tableMeta.AutoIncrement {
-			newId, err1 := this.NextSeq(tableMeta)
-			if err1 != nil {
-				return err1
-			}
-			reflect.ValueOf(data).Elem().FieldByName(tableMeta.IDName).SetInt(newId)
-		}
 		return collection.Insert(datas...)
 	})
 }
@@ -374,7 +366,7 @@ func (this *Database) ForceUpdateOne(data database.IData) error {
 	if result {
 		return this.UpdateOne(data)
 	} else {
-		return this.Insert(data)
+		return this.ForceInsert(data)
 	}
 }
 

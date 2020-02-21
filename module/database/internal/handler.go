@@ -30,7 +30,7 @@ func handleDelete(args []interface{}) {
 
 func handleInsert(args []interface{}) {
 	handler := args[1].(database.IDatabaseHandler)
-	err := handler.Insert(args[0].(database.IData))
+	err := handler.ForceInsert(args[0].(database.IData))
 	debugLog("insert", args[0], err)
 }
 

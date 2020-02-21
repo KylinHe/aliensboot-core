@@ -38,6 +38,7 @@ type IDatabaseHandler interface {
 	//GenId(data IData) (int32, error)
 	//InsertWithoutID(data IData) error
 	//GenTimestampId(data IData) (int64, error)
+	ForceInsert(data IData) error
 	Insert(data IData) error
 	InsertMulti(data []interface{}) error  //插入多条数据
 	QueryAll(data IData, result interface{}) error
